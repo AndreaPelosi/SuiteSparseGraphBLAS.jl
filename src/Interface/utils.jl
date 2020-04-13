@@ -72,3 +72,42 @@ function equal_op(T::DataType)
     end
     return GrB_EQ_FP64
 end
+
+function type_suffix(T::DataType)
+    if T == Bool
+        return "BOOL"
+    elseif T == Int8
+        return "INT8"
+    elseif T == UInt8
+        return "UINT8"
+    elseif T == Int16
+        return "INT16"
+    elseif T == UInt16
+        return "UINT16"
+    elseif T == Int32
+        return "INT32"
+    elseif T == UInt32
+        return "UINT32"
+    elseif T == Int64
+        return "INT64"
+    elseif T == UInt64
+        return "UINT64"
+    elseif  T == Float32
+        return "FP32"
+    end
+    return "FP64"
+end
+
+function GrB_op(fun_name, T)
+    return eval(Symbol("GrB_", uppercase(fun_name), "_", type_suffix(T)))
+end
+
+function GxB_op(fun_name, T)
+    return eval(Symbol("GxB_", uppercase(fun_name), "_", type_suffix(T)))
+end
+
+function check(status)
+    if status != GrB_SUCCESS
+        error(status)
+    end
+end

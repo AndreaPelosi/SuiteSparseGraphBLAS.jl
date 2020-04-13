@@ -47,6 +47,35 @@ function GrB_Matrix(T, nrows::Union{Int64, UInt64}, ncols::Union{Int64, UInt64})
     return A
 end
 
+function *(A::GrB_Matrix{T}, B::GrB_Matrix{T}) where T
+    Asize = size(A)
+    Bsize = size(B)
+
+    if Asize[2] != Bsize[1]
+        return error("dimensions do not match")
+    end
+
+    C = GrB_Matrix(T, Asize[1], Bsize[2])
+    
+    res = GrB_mxm(C, GrB_NULL, GrB_NULL, GxB_op("TIMES_PLUS", T), A, B, GrB_NULL)
+    if res != GrB_SUCCESS
+        error(res)
+    end
+
+    return C
+end
+
+function show(io::IO, ::MIME"text/plain", M::GrB_Matrix{T}) where T
+    Msize = size(M)
+
+    print(io, "$(Int64(Msize[1]))x$(Int64(Msize[2])) GrB_Matrix{$(T)} ")
+    println(io, "with $(nnz(M)) stored entries:")
+
+    for (i, j, x) in zip(findnz(M)...)
+        println("  [$i, $j] = $x")
+    end
+end
+
 """
     ==(A, B)
 

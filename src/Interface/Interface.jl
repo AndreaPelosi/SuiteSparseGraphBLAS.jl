@@ -3,7 +3,7 @@ module Interface
 using GraphBLASInterface, SuiteSparseGraphBLAS
 
 import Base:
-    getindex, setindex!, empty!, copy, size, adjoint, ==
+    getindex, setindex!, empty!, copy, size, adjoint, ==, *, show
 
 import SuiteSparseGraphBLAS:
         GrB_Matrix, GrB_Vector, GrB_Descriptor
