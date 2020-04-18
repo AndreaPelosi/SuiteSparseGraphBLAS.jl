@@ -34,12 +34,6 @@ end
     GrB_PANIC = 13                  # SuiteSparse:GraphBLAS only panics if a critical section fails
 end
 
-function check(info)
-    if info != GrB_SUCCESS
-        throw(GraphBlasException(string(info)))
-    end
-end
-
 function suffix(T::DataType)
     if T == Bool
         return "BOOL"
@@ -65,15 +59,18 @@ function suffix(T::DataType)
     return "FP64"
 end
 
+
+function check(info)
+    if info != GrB_SUCCESS
+        throw(GraphBlasException(string(info)))
+    end
+end
+
 function load_global(str)
     x = dlsym(graphblas_lib, str)
     return unsafe_load(cglobal(x, Ptr{Cvoid}))
 end
 
-function load_buildin_op(dict, lst, T)
-    for op in lst
-        k = Symbol(join(split(op, "_")[2:end-1]))
-        unaryops = get!(dict, k, [])
-        push!(unaryops, T(op))
-    end
+function gbtype_from_jtype(T::DataType)
+    return load_global("GrB_" * suffix(T))
 end
