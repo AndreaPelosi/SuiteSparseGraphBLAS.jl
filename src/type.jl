@@ -1,4 +1,7 @@
-struct GType
+const valid_types = Union{Bool, Int8, UInt8, Int16, UInt16, Int32, 
+                          UInt32, Int64, UInt64, Float32, Float64, Nothing}
+
+struct GType{T <: valid_types}
     jtype::DataType
     gbtype::Ptr{Cvoid}
     name::String
@@ -6,13 +9,41 @@ end
 
 Base.show(io::IO, T::GType) = print(io, T.name)
 
-const valid_types = (:BOOL, :INT8, :INT16, :INT32, :INT64, :UINT8, :UINT16, :UINT32, :UINT64, :FP32, :FP64, :ALL)
-
 function load_gbtypes()
-    for t in valid_types
-        expression = "$t = GType(jtype(\"$t\"), load_global(\"GrB_$t\"), \"$t\")" 
+    union2lst(T) = if isa(T, Union) return push!(union2lst(T.b), T.a) else return [T] end
+
+    for t in union2lst(valid_types)
+        expression = "$(suffix(t)) = GType{$t}($t, load_global(\"GrB_$(suffix(t))\"), \"$(suffix(t))\")" 
         eval(Meta.parse(expression))
-        eval(:(export $t))
+        eval(Meta.parse("export $(suffix(t))"))
+    end
+end
+
+function suffix(T::DataType)
+    if T == Bool
+        return "BOOL"
+    elseif T == Int8
+        return "INT8"
+    elseif T == UInt8
+        return "UINT8"
+    elseif T == Int16
+        return "INT16"
+    elseif T == UInt16
+        return "UINT16"
+    elseif T == Int32
+        return "INT32"
+    elseif T == UInt32
+        return "UINT32"
+    elseif T == Int64
+        return "INT64"
+    elseif T == UInt64
+        return "UINT64"
+    elseif T == Float32
+        return "FP32"
+    elseif T == Float64
+        return "FP64"
+    else
+        return "ALL"
     end
 end
 

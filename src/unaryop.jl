@@ -27,17 +27,16 @@ const Unaryop = Dict{Symbol,UnaryOperation}()
 
 # create new unary op from function fun, called s
 function unaryop(s::Symbol, fun::Function; xtype::GType = ALL, ztype::GType = ALL)
-    if haskey(Unaryop, s)
-        if xtype == ALL && ztype == ALL
+    uop = get!(Unaryop, s, UnaryOperation(fun))
+    if xtype != ALL && ztype != ALL
+        if findfirst(op -> op.xtype == xtype && op.ztype == ztype, uop.gb_uops) == nothing
+            op = GrB_UnaryOp_new(fun, ztype, xtype)
+            push!(uop, op)
+        else
             error("unaryop already exists")
         end
-    else
-        uop = UnaryOperation(fun)
-        if xtype != ALL && xtype != ALL
-            # TODO: create a new GrB_UnaryOp with specified domains
-        end
-        push!(Unaryop, s => uop)
     end
+    nothing
 end
 
 function load_builtin_unaryop()
@@ -76,4 +75,26 @@ function Base.getproperty(d::Dict{Symbol,UnaryOperation}, s::Symbol)
     catch
         return d[s]
     end
+end
+
+function GrB_UnaryOp_new(fn::Function, ztype::GType{T}, xtype::GType{U}) where {T, U}
+
+    op = GrB_UnaryOp()
+    op.ztype = ztype
+    op.xtype = xtype
+
+    op_ptr = pointer_from_objref(op)
+
+    function unaryop_fn(z, x)
+        unsafe_store!(z, fn(x))
+        return nothing
+    end
+
+    unaryop_fn_C = @cfunction($unaryop_fn, Cvoid, (Ptr{T}, Ref{U}))
+
+    check(GrB_Info(ccall(dlsym(graphblas_lib, "GrB_UnaryOp_new"), Cint,
+                   (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+                   op_ptr, unaryop_fn_C, ztype.gbtype, xtype.gbtype)))
+
+    return op
 end
