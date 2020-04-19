@@ -26,9 +26,9 @@ Base.push!(up::UnaryOperation, items...) = push!(up.gb_uops, items...)
 const Unaryop = Dict{Symbol,UnaryOperation}()
 
 # create new unary op from function fun, called s
-function unaryop(s::Symbol, fun::Function; xtype::GType = ALL, ztype::GType = ALL)
+function unaryop(s::Symbol, fun::Function; xtype::GType = NULL, ztype::GType = NULL)
     uop = get!(Unaryop, s, UnaryOperation(fun))
-    if xtype != ALL && ztype != ALL
+    if xtype != NULL && ztype != NULL
         if findfirst(op -> op.xtype == xtype && op.ztype == ztype, uop.gb_uops) == nothing
             op = GrB_UnaryOp_new(fun, ztype, xtype)
             push!(uop, op)
