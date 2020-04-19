@@ -1,23 +1,7 @@
-mutable struct GrB_Monoid
-    p::Ptr{Cvoid}
-    domain::GType
-
-    GrB_Monoid() = new()
-    GrB_Monoid(op, domain) = new(load_global(op), domain)
-end
-
-mutable struct Monoid
-    ops::Array{GrB_Monoid,1}
-
-    Monoid() = new([])
-end
-
-const Monoids = Dict{Symbol,Monoid}()
-
 Base.push!(m::Monoid, items...) = push!(m.ops, items...)
 
 # create new monoid from binary operation and identity value
-function monoid(s::Symbol, bin_op::BinaryOperation, identity::T) where T <: valid_types
+function monoid(s::Symbol, bin_op::BinaryOperator, identity::T) where T <: valid_types
     domain = j2gtype(T)
     monoid = get!(Monoids, s, Monoid())
     index = findfirst(m->m.domain == domain, monoid.ops)
@@ -54,14 +38,6 @@ function load_builtin_monoid()
 
     load(cat(grb_mon, grb_mon_bool, dims = 1))
         
-end
-
-function Base.getproperty(d::Dict{Symbol,Monoid}, s::Symbol)
-    try
-        return getfield(d, s)
-    catch
-        return d[s]
-    end
 end
 
 function GrB_Monoid_new(binary_op::GrB_BinaryOp, identity::T) where T

@@ -1,31 +1,13 @@
-mutable struct GrB_Semiring
-    p::Ptr{Cvoid}
-    xtype::GType    # type of matrix A
-    ytype::GType    # type of matrix B
-    ztype::GType    # type of result z = fmult(x, y) -> matches with monoid type
-
-    GrB_Semiring() = new()
-    GrB_Semiring(s, xtype, ytype, ztype) = new(load_global(s), xtype, ytype, ztype)
-end
-
-mutable struct Semiring
-    impl::Array{GrB_Semiring, 1}
-
-    Semiring() = new([])
-end
-
-function semiring(s::Symbol, sum::Monoid, mult::BinaryOperation)
+function semiring(s::Symbol, sum::Monoid, mult::BinaryOperator)
     # TODO
     error("TODO")
 end
-
-const Semirings = Dict{Symbol,Semiring}()
 
 Base.push!(m::Semiring, items...) = push!(m.impl, items...)
 
 function load_builtin_semiring()
 
-    function load(lst; ztype=NULL)
+    function load(lst; ztype = NULL)
         for op in lst
             bpn = split(op, "_")
             type = str2gtype(string(bpn[end]))
@@ -55,12 +37,4 @@ function load_builtin_semiring()
     load(gxb_comp, ztype = BOOL)
     load(gxb_bool)
         
-end
-
-function Base.getproperty(d::Dict{Symbol,Semiring}, s::Symbol)
-    try
-        return getfield(d, s)
-    catch
-        return d[s]
-    end
 end

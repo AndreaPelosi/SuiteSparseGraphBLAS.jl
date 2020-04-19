@@ -1,7 +1,6 @@
-const valid_types = Union{Bool, Int8, UInt8, Int16, UInt16, Int32, 
-                          UInt32, Int64, UInt64, Float32, Float64}
+const valid_types = Union{Bool,Int8,UInt8,Int16,UInt16,Int32,UInt32,Int64,UInt64,Float32,Float64}
 
-struct GType{T <: Union{valid_types, Nothing}}
+struct GType{T <: Union{valid_types,Nothing}}
     jtype::DataType
     gbtype::Ptr{Cvoid}
     name::String

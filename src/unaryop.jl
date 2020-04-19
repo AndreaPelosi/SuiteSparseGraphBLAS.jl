@@ -1,35 +1,10 @@
-mutable struct GrB_UnaryOp
-    p::Ptr{Cvoid}
-    ztype::GType
-    xtype::GType
-
-    GrB_UnaryOp(name::String, ztype, xtype) = new(load_global(name), ztype, xtype)
-    GrB_UnaryOp() = new()
-end
-
-# represent a unary operation without assigned type
-mutable struct UnaryOperation
-    fun::Function
-    gb_uops::Array{GrB_UnaryOp,1}
-
-    UnaryOperation(fun) = new(fun, [])
-
-    function UnaryOperation()
-        op = new()
-        op.gb_uops = []
-        return op
-    end
-end
-
-Base.push!(up::UnaryOperation, items...) = push!(up.gb_uops, items...)
-
-const Unaryop = Dict{Symbol,UnaryOperation}()
+Base.push!(up::UnaryOperator, items...) = push!(up.gb_uops, items...)
 
 # create new unary op from function fun, called s
 function unaryop(s::Symbol, fun::Function; xtype::GType = NULL, ztype::GType = NULL)
-    uop = get!(Unaryop, s, UnaryOperation(fun))
+    uop = get!(Unaryop, s, UnaryOperator(fun))
     if xtype != NULL && ztype != NULL
-        if findfirst(op -> op.xtype == xtype && op.ztype == ztype, uop.gb_uops) == nothing
+        if findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.gb_uops) == nothing
             op = GrB_UnaryOp_new(fun, ztype, xtype)
             push!(uop, op)
         else
@@ -53,15 +28,15 @@ function load_builtin_unaryop()
         type = str2gtype(string(opn[end]))
         
         unaryop_name = Symbol(join(opn[2:end - 1]))
-        unaryop = get!(Unaryop, unaryop_name, UnaryOperation())
+        unaryop = get!(Unaryop, unaryop_name, UnaryOperator())
         push!(unaryop, GrB_UnaryOp(op, type, type))
     end
     
 end
 
-# get GrB_UnaryOp associated at UnaryOperation with a specific input domain type
-function get_unaryop(uop::UnaryOperation, xtype::GType, ztype::GType)
-    index = findfirst(op -> op.xtype == xtype && op.ztype == ztype, uop.gb_uops)
+# get GrB_UnaryOp associated at UnaryOperator with a specific input domain type
+function get_unaryop(uop::UnaryOperator, xtype::GType, ztype::GType)
+    index = findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.gb_uops)
     if index == nothing
         # TODO: try to create new unary op with specified domains
     else
@@ -69,15 +44,7 @@ function get_unaryop(uop::UnaryOperation, xtype::GType, ztype::GType)
     end
 end
 
-function Base.getproperty(d::Dict{Symbol,UnaryOperation}, s::Symbol)
-    try
-        return getfield(d, s)
-    catch
-        return d[s]
-    end
-end
-
-function GrB_UnaryOp_new(fn::Function, ztype::GType{T}, xtype::GType{U}) where {T, U}
+function GrB_UnaryOp_new(fn::Function, ztype::GType{T}, xtype::GType{U}) where {T,U}
 
     op = GrB_UnaryOp()
     op.ztype = ztype
