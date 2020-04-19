@@ -26,9 +26,9 @@ Base.push!(up::BinaryOperation, items...) = push!(up.gb_bops, items...)
 const Binaryop = Dict{Symbol,BinaryOperation}()
 
 # create new unary op from function fun, called s
-function binaryop(s::Symbol, fun::Function; xtype::GType = ALL, ztype::GType = ALL, ytype::GType = ALL)
+function binaryop(s::Symbol, fun::Function; xtype::GType = NULL, ztype::GType = NULL, ytype::GType = NULL)
     uop = get!(Unaryop, s, BinaryOperation(fun))
-    if xtype != ALL && ztype != ALL
+    if xtype != NULL && ztype != NULL
         if findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, uop.gb_bops) == nothing
             op = GrB_BinaryOp_new(fun, ztype, xtype)
             push!(uop, op)
@@ -70,12 +70,13 @@ function load_builtin_binaryop()
 end
 
 # get GrB_UnaryOp associated at UnaryOperation with a specific input domain type
-function get_binaryop(uop::UnaryOperation, xtype::GType, ztype::GType, ytype::GType)
-    index = findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, uop.gb_bops)
+function get_binaryop(bop::BinaryOperation, xtype::GType, ztype::GType, ytype::GType)
+    index = findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, bop.gb_bops)
     if index == nothing
         # TODO: try to create new unary op with specified domains
+        error("TODO")
     else
-        return uop.gb_bops[index]
+        return bop.gb_bops[index]
     end
 end
 
