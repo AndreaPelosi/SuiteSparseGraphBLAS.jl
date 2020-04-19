@@ -104,3 +104,7 @@ function str2gtype(T::String)
         return FP64
     end
 end
+
+function j2gtype(T)
+    return str2gtype(suffix(T))
+end
