@@ -10,18 +10,18 @@ end
 
 mutable struct BinaryOperation
     fun::Function
-    gb_uops::Array{GrB_BinaryOp,1}
+    gb_bops::Array{GrB_BinaryOp,1}
 
     BinaryOperation(fun) = new(fun, [])
 
     function BinaryOperation()
         op = new()
-        op.gb_uops = []
+        op.gb_bops = []
         return op
     end
 end
 
-Base.push!(up::BinaryOperation, items...) = push!(up.gb_uops, items...)
+Base.push!(up::BinaryOperation, items...) = push!(up.gb_bops, items...)
 
 const Binaryop = Dict{Symbol,BinaryOperation}()
 
@@ -29,7 +29,7 @@ const Binaryop = Dict{Symbol,BinaryOperation}()
 function binaryop(s::Symbol, fun::Function; xtype::GType = ALL, ztype::GType = ALL, ytype::GType = ALL)
     uop = get!(Unaryop, s, BinaryOperation(fun))
     if xtype != ALL && ztype != ALL
-        if findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, uop.gb_uops) == nothing
+        if findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, uop.gb_bops) == nothing
             op = GrB_BinaryOp_new(fun, ztype, xtype)
             push!(uop, op)
         else
@@ -40,6 +40,18 @@ function binaryop(s::Symbol, fun::Function; xtype::GType = ALL, ztype::GType = A
 end
 
 function load_builtin_binaryop()
+
+    function load(lst; ztype=NULL)
+        for op in lst
+            bpn = split(op, "_")
+            type = str2gtype(string(bpn[end]))
+            
+            binaryop_name = Symbol(join(bpn[2:end - 1]))
+            binaryop = get!(Binaryop, binaryop_name, BinaryOperation())
+            push!(binaryop, GrB_BinaryOp(op, ztype == NULL ? type : ztype, type, type))
+        end
+    end
+
     grb_bop = compile(["GrB"],
     ["FIRST", "SECOND", "MIN", "MAX", "PLUS", "MINUS", "TIMES", "DIV"],
     ["BOOL", "UINT8", "UINT16", "UINT32", "UINT64", "INT8", "INT16", "INT32", "INT64", "FP32", "FP64"])
@@ -48,24 +60,22 @@ function load_builtin_binaryop()
     ["ISEQ", "ISNE", "ISGT", "ISLT", "ISGE", "ISLE", "LOR", "LAND", "LXOR"],
     ["BOOL", "UINT8", "UINT16", "UINT32", "UINT64", "INT8", "INT16", "INT32", "INT64", "FP32", "FP64"])
 
-    for op in cat(grb_bop, gxb_bop, dims = 1)
-        bpn = split(op, "_")
-        type = str2gtype(string(bpn[end]))
-        
-        binaryop_name = Symbol(join(bpn[2:end - 1]))
-        binaryop = get!(Binaryop, binaryop_name, BinaryOperation())
-        push!(binaryop, GrB_BinaryOp(op, type, type, type))
-    end
+    grb_bool = compile(["GrB"],
+    ["EQ", "NE", "GT", "LT", "GE", "LE"],
+    ["BOOL", "UINT8", "UINT16", "UINT32", "UINT64", "INT8", "INT16", "INT32", "INT64", "FP32", "FP64"])
+
+    load(cat(grb_bop, gxb_bop, dims=1))
+    load(grb_bool, ztype=BOOL)
     
 end
 
 # get GrB_UnaryOp associated at UnaryOperation with a specific input domain type
 function get_binaryop(uop::UnaryOperation, xtype::GType, ztype::GType, ytype::GType)
-    index = findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, uop.gb_uops)
+    index = findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, uop.gb_bops)
     if index == nothing
         # TODO: try to create new unary op with specified domains
     else
-        return uop.gb_uops[index]
+        return uop.gb_bops[index]
     end
 end
 
