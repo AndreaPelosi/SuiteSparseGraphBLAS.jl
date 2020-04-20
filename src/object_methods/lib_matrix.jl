@@ -22,17 +22,18 @@ julia> GrB_Matrix_new(MAT, GrB_INT8, 4, 4)
 GrB_SUCCESS::GrB_Info = 0
 ```
 """
-function GrB_Matrix_new(A::GrB_Matrix{T}, type::GrB_Type{T}, nrows::Union{Int64, UInt64}, ncols::Union{Int64, UInt64}) where T
+function GrB_Matrix_new(A::GBMatrix, type::GType, nrows::Union{Int64,UInt64}, ncols::Union{Int64,UInt64}) where T
     A_ptr = pointer_from_objref(A)
 
-    return GrB_Info(
+    check(GrB_Info(
         ccall(
                 dlsym(graphblas_lib, "GrB_Matrix_new"),
                 Cint,
                 (Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Cuintmax_t),
-                A_ptr, type.p, nrows, ncols
+                A_ptr, type.gbtype, nrows, ncols
             )
         )
+    )
 end
 
 """
@@ -76,12 +77,12 @@ row: 3 : 1 entries [4:4]
     column 3: int8 6
 ```
 """
-function GrB_Matrix_build(C::GrB_Matrix{T}, I::ZeroBasedIndices, J::ZeroBasedIndices, X::Vector{T}, nvals::Union{Int64, UInt64}, dup::GrB_BinaryOp) where T
+function GrB_Matrix_build(C::GBMatrix{T}, I::Vector{U}, J::Vector{U}, X::Vector{T}, nvals::U, dup::GrB_BinaryOp) where {T,U <: Union{Int64,UInt64}}
     I_ptr = pointer(I)
     J_ptr = pointer(J)
     X_ptr = pointer(X)
     fn_name = "GrB_Matrix_build_" * suffix(T)
-    return GrB_Info(
+    check(GrB_Info(
         ccall(
                 dlsym(graphblas_lib, fn_name),
                 Cint,
@@ -89,16 +90,8 @@ function GrB_Matrix_build(C::GrB_Matrix{T}, I::ZeroBasedIndices, J::ZeroBasedInd
                 C.p, I_ptr, J_ptr, X_ptr, nvals, dup.p
             )
         )
+    )
 end
-
-GrB_Matrix_build(
-    C::GrB_Matrix{T},
-    I::OneBasedIndices,
-    J::OneBasedIndices,
-    X::Vector{T},
-    nvals::Union{Int64, UInt64},
-    dup::GrB_BinaryOp
-    ) where T = GrB_Matrix_build(C, ZeroBasedIndices(I), ZeroBasedIndices(J), X, nvals, dup)
 
 """
     GrB_Matrix_nrows(A)
@@ -123,9 +116,9 @@ julia> GrB_Matrix_nrows(MAT)
 0x0000000000000004
 ```
 """
-function GrB_Matrix_nrows(A::GrB_Matrix)
+function GrB_Matrix_nrows(A::GBMatrix)
     nrows = Ref(UInt64(0))
-    result = GrB_Info(
+    check(GrB_Info(
                 ccall(
                         dlsym(graphblas_lib, "GrB_Matrix_nrows"),
                         Cint,
@@ -133,7 +126,7 @@ function GrB_Matrix_nrows(A::GrB_Matrix)
                         nrows, A.p
                     )
                 )
-    result != GrB_SUCCESS && return result
+    )
     return nrows[]
 end
 
@@ -160,9 +153,9 @@ julia> GrB_Matrix_ncols(MAT)
 0x0000000000000004
 ```
 """
-function GrB_Matrix_ncols(A::GrB_Matrix)
+function GrB_Matrix_ncols(A::GBMatrix)
     ncols = Ref(UInt64(0))
-    result = GrB_Info(
+    check(GrB_Info(
                 ccall(
                         dlsym(graphblas_lib, "GrB_Matrix_ncols"),
                         Cint,
@@ -170,7 +163,7 @@ function GrB_Matrix_ncols(A::GrB_Matrix)
                         ncols, A.p
                     )
                 )
-    result != GrB_SUCCESS && return result
+    )
     return ncols[]
 end
 
@@ -202,9 +195,9 @@ julia> GrB_Matrix_nvals(MAT)
 0x0000000000000005
 ```
 """
-function GrB_Matrix_nvals(A::GrB_Matrix)
+function GrB_Matrix_nvals(A::GBMatrix)
     nvals = Ref(UInt64(0))
-    result = GrB_Info(
+    check(GrB_Info(
                 ccall(
                         dlsym(graphblas_lib, "GrB_Matrix_nvals"),
                         Cint,
@@ -212,7 +205,7 @@ function GrB_Matrix_nvals(A::GrB_Matrix)
                         nvals, A.p
                     )
                 )
-    result != GrB_SUCCESS && return result
+    )
     return nvals[]
 end
 
@@ -263,10 +256,10 @@ row: 3 : 1 entries [4:4]
     column 3: int8 6
 ```
 """
-function GrB_Matrix_dup(C::GrB_Matrix{T}, A::GrB_Matrix{T}) where T
+function GrB_Matrix_dup(C::GBMatrix{T}, A::GBMatrix{T}) where T
     C_ptr = pointer_from_objref(C)
 
-    return GrB_Info(
+    check(GrB_Info(
         ccall(
                 dlsym(graphblas_lib, "GrB_Matrix_dup"),
                 Cint,
@@ -274,6 +267,7 @@ function GrB_Matrix_dup(C::GrB_Matrix{T}, A::GrB_Matrix{T}) where T
                 C_ptr, A.p
             )
         )
+    )
 end
 
 """
@@ -309,15 +303,16 @@ julia> GrB_Matrix_nvals(MAT)
 0x0000000000000000
 ```
 """
-function GrB_Matrix_clear(A::GrB_Matrix)
-    return GrB_Info(
+function GrB_Matrix_clear(A::GBMatrix)
+    check(GrB_Info(
         ccall(
                 dlsym(graphblas_lib, "GrB_Matrix_clear"),
                 Cint,
-                (Ptr{Cvoid}, ),
+                (Ptr{Cvoid},),
                 A.p
             )
         )
+    )
 end
 
 """
@@ -353,60 +348,57 @@ julia> GrB_Matrix_extractElement(MAT, ZeroBasedIndex(1), ZeroBasedIndex(1))
 7
 ```
 """
-function GrB_Matrix_setElement(C::GrB_Matrix{T}, X::T, I::U, J::U) where {T, U <: ZeroBasedIndex}
+function GrB_Matrix_setElement(C::GBMatrix{T}, X::T, I::U, J::U) where {T,U <: Integer}
     fn_name = "GrB_Matrix_setElement_" * suffix(T)
-    return GrB_Info(
+    check(GrB_Info(
         ccall(
                 dlsym(graphblas_lib, fn_name),
                 Cint,
                 (Ptr{Cvoid}, Cintmax_t, Cuintmax_t, Cuintmax_t),
-                C.p, X, I.x, J.x
+                C.p, X, I, J
             )
         )
+    )
 end
 
-function GrB_Matrix_setElement(C::GrB_Matrix{UInt64}, X::UInt64, I::U, J::U) where U <: ZeroBasedIndex
+function GrB_Matrix_setElement(C::GBMatrix{UInt64}, X::UInt64, I::Integer, J::Integer)
     fn_name = "GrB_Matrix_setElement_UINT64"
-    return GrB_Info(
+    check(GrB_Info(
         ccall(
                 dlsym(graphblas_lib, fn_name),
                 Cint,
                 (Ptr{Cvoid}, Cuintmax_t, Cuintmax_t, Cuintmax_t),
-                C.p, X, I.x, J.x
+                C.p, X, I, J
             )
         )
+    )
 end
 
-function GrB_Matrix_setElement(C::GrB_Matrix{Float32}, X::Float32, I::U, J::U) where U <: ZeroBasedIndex
+function GrB_Matrix_setElement(C::GBMatrix{Float32}, X::Float32, I::Integer, J::Integer)
     fn_name = "GrB_Matrix_setElement_FP32"
-    return GrB_Info(
+    check(GrB_Info(
         ccall(
                 dlsym(graphblas_lib, fn_name),
                 Cint,
                 (Ptr{Cvoid}, Cfloat, Cuintmax_t, Cuintmax_t),
-                C.p, X, I.x, J.x
+                C.p, X, I, J
             )
         )
+    )
 end
 
-function GrB_Matrix_setElement(C::GrB_Matrix{Float64}, X::Float64, I::U, J::U) where U <: ZeroBasedIndex
+function GrB_Matrix_setElement(C::GBMatrix{Float64}, X::Float64, I::Integer, J::Integer)
     fn_name = "GrB_Matrix_setElement_FP64"
-    return GrB_Info(
+    check(GrB_Info(
         ccall(
                 dlsym(graphblas_lib, fn_name),
                 Cint,
                 (Ptr{Cvoid}, Cdouble, Cuintmax_t, Cuintmax_t),
-                C.p, X, I.x, J.x
+                C.p, X, I, J
             )
         )
+    )
 end
-
-GrB_Matrix_setElement(
-    C::GrB_Matrix{T},
-    X::T,
-    I::OneBasedIndex,
-    J::OneBasedIndex
-    ) where T = GrB_Matrix_setElement(C, X, ZeroBasedIndex(I), ZeroBasedIndex(J))
 
 """
     GrB_Matrix_extractElement(A, row_index, col_index)
@@ -436,27 +428,21 @@ julia> GrB_Matrix_extractElement(MAT, ZeroBasedIndex(1), ZeroBasedIndex(1))
 2
 ```
 """
-function GrB_Matrix_extractElement(A::GrB_Matrix{T}, row_index::U, col_index::U) where {T, U <: ZeroBasedIndex}
+function GrB_Matrix_extractElement(A::GBMatrix{T}, row_index::U, col_index::U) where {T,U <: Integer}
     fn_name = "GrB_Matrix_extractElement_" * suffix(T)
 
     element = Ref(T(0))
-    result = GrB_Info(
+    check(GrB_Info(
                 ccall(
                         dlsym(graphblas_lib, fn_name),
                         Cint,
                         (Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Cuintmax_t),
-                        element, A.p, row_index.x, col_index.x
+                        element, A.p, row_index, col_index
                     )
                 )
-    result != GrB_SUCCESS && return result
+    )
     return element[]
 end
-
-GrB_Matrix_extractElement(
-    A::GrB_Matrix,
-    row_index::OneBasedIndex,
-    col_index::OneBasedIndex
-    ) = GrB_Matrix_extractElement(A, ZeroBasedIndex(row_index), ZeroBasedIndex(col_index))
 
 """
     GrB_Matrix_extractTuples(A,[ index_type])
@@ -487,18 +473,16 @@ julia> GrB_Matrix_extractTuples(MAT)
 (ZeroBasedIndex[1, 2, 2, 2, 3], ZeroBasedIndex[1, 1, 2, 3, 3], Int8[2, 4, 3, 5, 6])
 ```
 """
-function GrB_Matrix_extractTuples(A::GrB_Matrix{T}, index_type::Type{<:Abstract_GrB_Index} = ZeroBasedIndex) where T
+function GrB_Matrix_extractTuples(A::GBMatrix{T}) where T
     nvals = GrB_Matrix_nvals(A)
-    if typeof(nvals) == GrB_Info
-        return nvals
-    end
-    row_indices = ZeroBasedIndices(undef, nvals)
-    col_indices = ZeroBasedIndices(undef, nvals)
+
+    row_indices = Vector{UInt64}(undef, nvals)
+    col_indices = Vector{UInt64}(undef, nvals)
     vals = Vector{T}(undef, nvals)
     n = Ref(UInt64(nvals))
 
     fn_name = "GrB_Matrix_extractTuples_" * suffix(T)
-    result = GrB_Info(
+    check(GrB_Info(
                 ccall(
                         dlsym(graphblas_lib, fn_name),
                         Cint,
@@ -506,9 +490,7 @@ function GrB_Matrix_extractTuples(A::GrB_Matrix{T}, index_type::Type{<:Abstract_
                         pointer(row_indices), pointer(col_indices), pointer(vals), n, A.p
                     )
                 )
-    result != GrB_SUCCESS && return result
-    if index_type == OneBasedIndex
-        return OneBasedIndices(row_indices), OneBasedIndices(col_indices), vals
-    end
+    )
+    
     return row_indices, col_indices, vals
 end
