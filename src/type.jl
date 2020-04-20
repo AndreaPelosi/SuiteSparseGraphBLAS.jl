@@ -3,6 +3,8 @@ const valid_types = Union{Bool,Int8,UInt8,Int16,UInt16,Int32,UInt32,Int64,UInt64
 struct GType{T <: Union{valid_types,Nothing}}
     jtype::DataType
     gbtype::Ptr{Cvoid}
+    one::T
+    zero::T
     name::String
 end
 
@@ -13,9 +15,9 @@ function load_gbtypes()
 
     function load_type(name, jtype, gbtype)
         if gbtype == C_NULL
-            expression = "$name = GType{$jtype}($jtype, C_NULL, \"$name\"); export $name"
+            expression = "$name = GType{$jtype}($jtype, C_NULL, nothing, nothing, \"$name\"); export $name"
         else
-            expression = "$name = GType{$jtype}($jtype, load_global(\"GrB_$gbtype\"), \"$name\"); export $name"
+            expression = "$name = GType{$jtype}($jtype, load_global(\"GrB_$gbtype\"), one($jtype), zero($jtype), \"$name\"); export $name"
         end
         eval(Meta.parse(expression))
     end
