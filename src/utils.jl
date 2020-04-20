@@ -1,6 +1,16 @@
-struct GraphBlasException <: Exception
-    error::String
-end
+struct GraphBLASNoValueException <: Exception end
+struct GraphBLASUninitializedObjectException <: Exception end
+struct GraphBLASInvalidObjectException <: Exception end
+struct GraphBLASNullPointerException <: Exception end
+struct GraphBLASInvalidValueException <: Exception end
+struct GraphBLASInvalidIndexException <: Exception end
+struct GraphBLASDomainMismatchException <: Exception end
+struct GraphBLASDimensionMismatchException <: Exception end
+struct GraphBLASOutputNotEmptyException <: Exception end
+struct GraphBLASOutOfMemoryException <: Exception end
+struct GraphBLASInsufficientSpaceException <: Exception end
+struct GraphBLASIndexOutOfBoundException <: Exception end
+struct GraphBLASPanicException <: Exception end
 
 function compile(lst...)
     res = String[]
@@ -35,9 +45,32 @@ end
 end
 
 function check(info)
-    println(info)
-    if info != GrB_SUCCESS
-        throw(GraphBlasException(string(info)))
+    if info == GrB_NO_VALUE
+        throw(GraphBLASNoValueException())
+    elseif info == GrB_UNINITIALIZED_OBJECT
+        throw(GraphBLASUninitializedObjectException())
+    elseif info == GrB_INVALID_OBJECT
+        throw(GraphBLASInvalidObjectException())
+    elseif info == GrB_NULL_POINTER
+        throw(GraphBLASNullPointerException())
+    elseif info == GrB_INVALID_VALUE
+        throw(GraphBLASInvalidValueException())
+    elseif info == GrB_INVALID_INDEX
+        throw(GraphBLASInvalidIndexException())
+    elseif info == GrB_DOMAIN_MISMATCH
+        throw(GraphBLASDomainMismatchException())
+    elseif info == GrB_DIMENSION_MISMATCH
+        throw(GraphBLASDimensionMismatchException())
+    elseif info == GrB_OUTPUT_NOT_EMPTY
+        throw(GraphBLASOutputNotEmptyException())
+    elseif info == GrB_OUT_OF_MEMORY
+        throw(GraphBLASOutOfMemoryException())
+    elseif info == GrB_INSUFFICIENT_SPACE
+        throw(GraphBLASInsufficientSpaceException())
+    elseif info == GrB_INDEX_OUT_OF_BOUNDS
+        throw(GraphBLASIndexOutOfBoundException())
+    elseif info == GrB_PANIC
+        throw(GraphBLASPanicException())
     end
 end
 
