@@ -1,17 +1,13 @@
-Base.push!(up::BinaryOperator, items...) = push!(up.gb_bops, items...)
-
 # create new unary op from function fun, called s
 function binaryop(s::Symbol, fun::Function; xtype::GType = NULL, ztype::GType = NULL, ytype::GType = NULL)
     bop = get!(Binaryop, s, BinaryOperator(fun))
     if xtype != NULL && ztype != NULL && ytype != NULL
-        if findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, bop.gb_bops) == nothing
+        if findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, bop.impl) == nothing
             op = GrB_BinaryOp_new(fun, ztype, xtype, ytype)
-            push!(bop, op)
-        else
-            error("binaryop already exists")
+            push!(bop.impl, op)
         end    
     end
-    nothing
+    return bop
 end
 
 function load_builtin_binaryop()
@@ -23,7 +19,7 @@ function load_builtin_binaryop()
             
             binaryop_name = Symbol(join(bpn[2:end - 1]))
             binaryop = get!(Binaryop, binaryop_name, BinaryOperator())
-            push!(binaryop, GrB_BinaryOp(op, ztype == NULL ? type : ztype, type, type))
+            push!(binaryop.impl, GrB_BinaryOp(op, ztype == NULL ? type : ztype, type, type))
         end
     end
 
@@ -44,14 +40,18 @@ function load_builtin_binaryop()
     
 end
 
-# get GrB_UnaryOp associated at UnaryOperation with a specific input domain type
-function get_binaryop(bop::BinaryOperator, ztype::GType, ytype::GType, xtype::GType)
-    index = findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, bop.gb_bops)
+# get GrB_BinaryOp associated at UnaryOperation with a specific input domain type
+function get_binaryop(binary_op::BinaryOperator, ztype::GType, xtype::GType, ytype::GType)
+    index = findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, binary_op.impl)
     if index == nothing
-        # TODO: try to create new unary op with specified domains
-        error("TODO")
+        if binary_op.fun != nothing
+            # user defined binary op
+            bop = GrB_BinaryOp_new(binary_op.fun, ztype, xtype, ytype)
+            push!(binary_op.impl, bop)
+            return bop
+        end
     else
-        return bop.gb_bops[index]
+        return binary_op.impl[index]
     end
 end
 

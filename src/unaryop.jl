@@ -1,17 +1,13 @@
-Base.push!(up::UnaryOperator, items...) = push!(up.gb_uops, items...)
-
 # create new unary op from function fun, called s
 function unaryop(s::Symbol, fun::Function; xtype::GType = NULL, ztype::GType = NULL)
     uop = get!(Unaryop, s, UnaryOperator(fun))
     if xtype != NULL && ztype != NULL
-        if findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.gb_uops) == nothing
+        if findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.impl) == nothing
             op = GrB_UnaryOp_new(fun, ztype, xtype)
-            push!(uop, op)
-        else
-            error("unaryop already exists")
+            push!(uop.impl, op)
         end
     end
-    nothing
+    return uop
 end
 
 function load_builtin_unaryop()
@@ -29,18 +25,18 @@ function load_builtin_unaryop()
         
         unaryop_name = Symbol(join(opn[2:end - 1]))
         unaryop = get!(Unaryop, unaryop_name, UnaryOperator())
-        push!(unaryop, GrB_UnaryOp(op, type, type))
+        push!(unaryop.impl, GrB_UnaryOp(op, type, type))
     end
     
 end
 
 # get GrB_UnaryOp associated at UnaryOperator with a specific input domain type
-function get_unaryop(uop::UnaryOperator, xtype::GType, ztype::GType)
-    index = findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.gb_uops)
+function get_unaryop(uop::UnaryOperator, ztype::GType, xtype::GType)
+    index = findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.impl)
     if index == nothing
         # TODO: try to create new unary op with specified domains
     else
-        return uop.gb_uops[index]
+        return uop.impl[index]
     end
 end
 

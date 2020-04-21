@@ -3,7 +3,7 @@ mutable struct GrB_UnaryOp
     ztype::GType
     xtype::GType
 
-    GrB_UnaryOp(name::String, ztype, xtype) = new(load_global(name), ztype, xtype)
+    GrB_UnaryOp(unaryop_name, ztype, xtype) = new(load_global(unaryop_name), ztype, xtype)
     GrB_UnaryOp() = new()
 end
 
@@ -13,53 +13,58 @@ mutable struct GrB_BinaryOp
     xtype::GType
     ytype::GType
 
-    GrB_BinaryOp(name::String, ztype, xtype, ytype) = new(load_global(name), ztype, xtype, ytype)
-    GrB_BinaryOp() = new()
+    GrB_BinaryOp() = new(C_NULL, NULL, NULL, NULL)
+    GrB_BinaryOp(binaryop_name, ztype, xtype, ytype) = new(load_global(binaryop_name), ztype, xtype, ytype)
+end
+
+mutable struct GrB_Monoid
+    p::Ptr{Cvoid}
+    domain::GType
+
+    GrB_Monoid() = new(C_NULL, NULL)
+    GrB_Monoid(monoid_name, domain) = new(load_global(monoid_name), domain)
+end
+
+mutable struct GrB_Semiring
+    p::Ptr{Cvoid}
+    xtype::GType
+    ytype::GType
+    ztype::GType
+
+    GrB_Semiring() = new(C_NULL, NULL, NULL, NULL)
+    GrB_Semiring(semiring_name, xtype, ytype, ztype) = new(load_global(semiring_name), xtype, ytype, ztype)
 end
 
 # represent a unary operation without assigned type
 mutable struct UnaryOperator
-    fun::Function
-    gb_uops::Array{GrB_UnaryOp,1}
+    fun::Union{Function, Nothing}
+    impl::Vector{GrB_UnaryOp}
 
+    UnaryOperator() = new(nothing, [])
     UnaryOperator(fun) = new(fun, [])
-
-    function UnaryOperator()
-        op = new()
-        op.gb_uops = []
-        return op
-    end
 end
 
 mutable struct BinaryOperator
-    fun::Function
-    gb_bops::Array{GrB_BinaryOp,1}
+    fun::Union{Function, Nothing}
+    impl::Vector{GrB_BinaryOp}
 
+    BinaryOperator() = new(nothing, [])
     BinaryOperator(fun) = new(fun, [])
-
-    function BinaryOperator()
-        op = new()
-        op.gb_bops = []
-        return op
-    end
 end
 
 mutable struct Monoid
-    p::Ptr{Cvoid}
-    domain::GType
+    impl::Vector{GrB_Monoid}
 
-    Monoid() = new(C_NULL, NULL)
-    Monoid(mon, domain) = new(load_global(mon), domain)
+    Monoid() = new([])
 end
 
 mutable struct Semiring
-    p::Ptr{Cvoid}
-    xtype::GType    # type of matrix A
-    ytype::GType    # type of matrix B
-    ztype::GType    # type of result z = fmult(x, y) -> matches with monoid type
+    monoid::Union{Monoid, Nothing}
+    binaryop::Union{BinaryOperator, Nothing}
+    impl::Vector{GrB_Semiring}
 
-    Semiring() = new(C_NULL, NULL, NULL, NULL)
-    Semiring(s, xtype, ytype, ztype) = new(load_global(s), xtype, ytype, ztype)
+    Semiring() = new(nothing, nothing,[])
+    Semiring(monoid, binaryop) = new(monoid, binaryop, [])
 end
 
 const Unaryop = Dict{Symbol,UnaryOperator}()
@@ -67,7 +72,7 @@ const Binaryop = Dict{Symbol,BinaryOperator}()
 const Monoids = Dict{Symbol,Monoid}()
 const Semirings = Dict{Symbol,Semiring}()
 
-function Base.getproperty(d::Dict{Symbol,T}, s::Symbol) where T <: Union{UnaryOperator, BinaryOperator, Monoid, Semiring}
+function Base.getproperty(d::Dict{Symbol,T}, s::Symbol) where T <: Union{UnaryOperator,BinaryOperator,Monoid,Semiring}
     try
         return getfield(d, s)
     catch

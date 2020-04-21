@@ -1,16 +1,25 @@
-function semiring(s::Symbol, sum::Monoid, mult::BinaryOperator, xtype::GType, ytype=GType)
-    bop = get_binaryop(mult, sum.domain, xtype, ytype)
-    return semiring(s, sum, bop)
+function semiring(s::Symbol, add::Monoid, mult::BinaryOperator)
+    sem = get!(Semirings, s, Semiring(add, mult))
+    return sem
 end
 
-function semiring(s::Symbol, sum::Monoid, mult::GrB_BinaryOp)
-    @assert sum.domain == mult.ztype
-    if haskey(Semirings, s)
-        error("semiring already exists")
+function get_semiring(semiring::Semiring, ztype::GType, xtype::GType, ytype::GType)
+    index = findfirst(sem -> sem.xtype == xtype && sem.ytype == ytype && sem.ztype == ztype, semiring.impl)
+    if index == nothing
+        # create a semiring with given types
+        if semiring.monoid != nothing && semiring.binaryop != nothing
+            # user defined semiring
+            bop = get_binaryop(semiring.binaryop, ztype, xtype, ytype)
+            mon = get_monoid(semiring.monoid, ztype)
+
+            sem = GrB_Semiring_new(mon, bop)
+            push!(semiring.impl, sem)
+            return sem
+        end
+    else
+        return semiring.impl[index]
     end
-    semiring = GrB_Semiring_new(sum, mult)
-    push!(Semirings, s => semiring)
-    return semiring
+    error("error")
 end
 
 function load_builtin_semiring()
@@ -20,9 +29,9 @@ function load_builtin_semiring()
             bpn = split(op, "_")
             type = str2gtype(string(bpn[end]))
             
-            semiring_name = Symbol(join(bpn[2:end], "_"))
-            semiring = Semiring(op, type, type, ztype == NULL ? type : ztype)
-            push!(Semirings, semiring_name => semiring)
+            semiring_name = Symbol(join(bpn[2:end-1], "_"))
+            semiring = get!(Semirings, semiring_name, Semiring())
+            push!(semiring.impl, GrB_Semiring(op, type, type, ztype == NULL ? type : ztype))
         end
     end
 
@@ -52,7 +61,7 @@ end
 Initialize a GraphBLAS semiring with specified monoid and binary operator.
 """
 function GrB_Semiring_new(monoid::Monoid, binary_op::GrB_BinaryOp)
-    semiring = Semiring()
+    semiring = GrB_Semiring()
     semiring.xtype = binary_op.xtype
     semiring.ytype = binary_op.ytype
     semiring.ztype = binary_op.ztype
