@@ -1,10 +1,9 @@
 valid_types = [Bool,Int8,UInt8,Int16,UInt16,Int32,UInt32,Int64,UInt64,Float32,Float64]
+count(d) = sum([length(d[k].impl) for k in keys(d)])
 
 @testset "Unary Operations" begin
 
     # built-in unary ops
-    count(d) = sum([length(d[k].gb_uops) for k in keys(d)])
-
     @test length(keys(Unaryop)) == 6
     @test count(Unaryop) == 66
 
@@ -12,7 +11,7 @@ valid_types = [Bool,Int8,UInt8,Int16,UInt16,Int32,UInt32,Int64,UInt64,Float32,Fl
     SG.unaryop(:NO_TYPE, a->a)
     @test haskey(Unaryop, :NO_TYPE)
     uop_no_type = Unaryop.NO_TYPE
-    @test isempty(uop_no_type.gb_uops)
+    @test isempty(uop_no_type.impl)
 
     # same unaryop
     for type in valid_types
@@ -24,7 +23,7 @@ valid_types = [Bool,Int8,UInt8,Int16,UInt16,Int32,UInt32,Int64,UInt64,Float32,Fl
         @test tmp.xtype == t
         @test tmp.ztype == t
     end
-    @test length(Unaryop.SAME_TYPE.gb_uops) == length(valid_types)
+    @test length(Unaryop.SAME_TYPE.impl) == length(valid_types)
 
     # different unary ops
     for type in valid_types
@@ -36,18 +35,14 @@ valid_types = [Bool,Int8,UInt8,Int16,UInt16,Int32,UInt32,Int64,UInt64,Float32,Fl
         @test isa(tmp, SG.GrB_UnaryOp)
         @test tmp.xtype == t
         @test tmp.ztype == t
-        @test length(uop.gb_uops) == 1
+        @test length(uop.impl) == 1
     end
-
-    
     
 end
 
 @testset "Binary Operations" begin
 
     # built-in binary ops
-    count(d) = sum([length(d[k].gb_bops) for k in keys(d)])
-
     @test length(keys(Binaryop)) == 17 + 6
     @test count(Binaryop) == 253
 
@@ -55,7 +50,7 @@ end
     SG.binaryop(:NO_TYPE, (a, b)->a)
     @test haskey(Binaryop, :NO_TYPE)
     bop_no_type = Binaryop.NO_TYPE
-    @test isempty(bop_no_type.gb_bops)
+    @test isempty(bop_no_type.impl)
 
     # same binary op
     for type in valid_types
@@ -80,7 +75,7 @@ end
         @test tmp.xtype == t
         @test tmp.ytype == t
         @test tmp.ztype == t
-        @test length(bop.gb_bops) == 1
+        @test length(bop.impl) == 1
     end
 
 end
@@ -88,18 +83,18 @@ end
 @testset "Monoids" begin
 
     # built-in monoids
-    @test length(keys(Monoids)) == 44
+    @test count(Monoids) == 44
 
     
     bop = Binaryop.PLUS
 
     monoid_plus_int8 = SG.monoid(:TEST_PLUS_INT8, bop, zero(Int8))
     @test haskey(Monoids, :TEST_PLUS_INT8)
-    @test monoid_plus_int8.domain == INT8
+    @test monoid_plus_int8.impl[1].domain == INT8
 
     monoid_plus_int32 = SG.monoid(:TEST_PLUS_INT32, bop, zero(Int32))
     @test haskey(Monoids, :TEST_PLUS_INT32)
-    @test monoid_plus_int32.domain == INT32
+    @test monoid_plus_int32.impl[1].domain == INT32
 
     
 
@@ -108,18 +103,8 @@ end
 @testset "Semirings" begin
 
     # built-in monoids
-    @test length(keys(Semirings)) == 960
+    @test count(Semirings) == 960
 
-    bop_plus_int64 = SG.get_binaryop(Binaryop.PLUS, INT64, INT64, INT64)
-    mon = Monoids.MAX_INT64
-    sem = SG.semiring(:TEST_INT64, mon, bop_plus_int64)
-    @test isa(sem, SG.Semiring)
-    @test sem.xtype == INT64 && sem.ytype == INT64 && sem.ztype == INT64
-
-    bop_eq_int64 = SG.get_binaryop(Binaryop.EQ, BOOL, INT64, INT64)
-    mon = Monoids.LAND_BOOL
-    sem = SG.semiring(:TEST_BOOL, mon, bop_eq_int64)
-    @test isa(sem, SG.Semiring)
-    @test sem.xtype == INT64 && sem.ytype == INT64 && sem.ztype == BOOL
+    
 
 end
