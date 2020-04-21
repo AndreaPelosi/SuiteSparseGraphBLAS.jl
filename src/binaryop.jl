@@ -2,14 +2,14 @@ Base.push!(up::BinaryOperator, items...) = push!(up.gb_bops, items...)
 
 # create new unary op from function fun, called s
 function binaryop(s::Symbol, fun::Function; xtype::GType = NULL, ztype::GType = NULL, ytype::GType = NULL)
-    uop = get!(Unaryop, s, BinaryOperator(fun))
-    if xtype != NULL && ztype != NULL
-        if findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, uop.gb_bops) == nothing
-            op = GrB_BinaryOp_new(fun, ztype, xtype)
-            push!(uop, op)
+    bop = get!(Binaryop, s, BinaryOperator(fun))
+    if xtype != NULL && ztype != NULL && ytype != NULL
+        if findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, bop.gb_bops) == nothing
+            op = GrB_BinaryOp_new(fun, ztype, xtype, ytype)
+            push!(bop, op)
         else
             error("binaryop already exists")
-        end
+        end    
     end
     nothing
 end

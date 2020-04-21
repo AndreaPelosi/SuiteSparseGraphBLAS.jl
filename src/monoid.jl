@@ -3,7 +3,7 @@ Base.push!(m::Monoid, items...) = push!(m.ops, items...)
 # create new monoid from binary operation and identity value
 function monoid(s::Symbol, bin_op::BinaryOperator, identity::T) where T <: valid_types
     domain = j2gtype(T)
-    monoid = get!(Monoids, s, Monoid())
+    monoid = get!(Monoids, s, Monoid(bin_op))
     index = findfirst(m->m.domain == domain, monoid.ops)
     if index == nothing
         bop = get_binaryop(bin_op, domain, domain, domain)
@@ -13,6 +13,15 @@ function monoid(s::Symbol, bin_op::BinaryOperator, identity::T) where T <: valid
         error("monoid already exists")
     end
     return monoid
+end
+
+function get_monoid(monoid::Monoid, domain::GType)
+    index = findfirst(mon -> mon.domain == domain, monoid.ops)
+    if index == nothing
+        error("monoid not exists")
+    else
+        return monoid.ops[index]
+    end
 end
 
 function load_builtin_monoid()

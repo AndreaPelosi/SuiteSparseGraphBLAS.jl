@@ -5,6 +5,11 @@ end
 
 Base.push!(m::Semiring, items...) = push!(m.impl, items...)
 
+function get_semiring(semiring::Semiring, xtype::GType, ytype::GType, ztype::GType)
+    # TODO
+    error("TODO")
+end
+
 function load_builtin_semiring()
 
     function load(lst; ztype = NULL)

@@ -63,9 +63,16 @@ mutable struct BinaryOperator
 end
 
 mutable struct Monoid
+    binary_op::BinaryOperator
     ops::Array{GrB_Monoid,1}
 
-    Monoid() = new([])
+    Monoid(bop) = new(bop, [])
+    
+    function Monoid()
+        mon = new()
+        mon.ops = []
+        return mon
+    end
 end
 
 mutable struct Semiring
@@ -86,6 +93,11 @@ function Base.getproperty(d::Dict{Symbol,T}, s::Symbol) where T <: Union{UnaryOp
         return d[s]
     end
 end
+
+_gb_pointer(op::GrB_UnaryOp) = op.p
+_gb_pointer(op::GrB_BinaryOp) = op.p
+_gb_pointer(op::GrB_Monoid) = op.p
+_gb_pointer(op::GrB_Semiring) = op.p
 
 # import Base:
 #         show, ==, pointer, convert, isless, Vector, getindex

@@ -10,6 +10,8 @@ end
 
 Base.show(io::IO, T::GType) = print(io, T.name)
 
+_gb_pointer(m::GType) = m.gbtype
+
 function load_gbtypes()
     union2lst(T) = if isa(T, Union) return push!(union2lst(T.b), T.a) else return [T] end
 
