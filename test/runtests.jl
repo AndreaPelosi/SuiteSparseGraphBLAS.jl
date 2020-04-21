@@ -1,12 +1,14 @@
-using GraphBLASInterface, SuiteSparseGraphBLAS
+using SuiteSparseGraphBLAS
 using Test
 
-@test GrB_init(GrB_NONBLOCKING) == GrB_SUCCESS
+SG = SuiteSparseGraphBLAS
+
+SG.GrB_init(0)
 
 const testdir = dirname(@__FILE__)
 
 tests = [
-    "matrix_and_vector_methods",
+    "operator",
 ]
 
 @testset "SuiteSparseGraphBLAS" begin
