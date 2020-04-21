@@ -88,7 +88,7 @@ end
 @testset "Monoids" begin
 
     # built-in monoids
-    @test length(keys(Monoids)) == 48
+    @test length(keys(Monoids)) == 44
 
     
     bop = Binaryop.PLUS
@@ -109,5 +109,17 @@ end
 
     # built-in monoids
     @test length(keys(Semirings)) == 960
+
+    bop_plus_int64 = SG.get_binaryop(Binaryop.PLUS, INT64, INT64, INT64)
+    mon = Monoids.MAX_INT64
+    sem = SG.semiring(:TEST_INT64, mon, bop_plus_int64)
+    @test isa(sem, SG.Semiring)
+    @test sem.xtype == INT64 && sem.ytype == INT64 && sem.ztype == INT64
+
+    bop_eq_int64 = SG.get_binaryop(Binaryop.EQ, BOOL, INT64, INT64)
+    mon = Monoids.LAND_BOOL
+    sem = SG.semiring(:TEST_BOOL, mon, bop_eq_int64)
+    @test isa(sem, SG.Semiring)
+    @test sem.xtype == INT64 && sem.ytype == INT64 && sem.ztype == BOOL
 
 end
