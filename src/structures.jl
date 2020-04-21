@@ -17,24 +17,6 @@ mutable struct GrB_BinaryOp
     GrB_BinaryOp() = new()
 end
 
-mutable struct GrB_Monoid
-    p::Ptr{Cvoid}
-    domain::GType
-
-    GrB_Monoid() = new()
-    GrB_Monoid(op, domain) = new(load_global(op), domain)
-end
-
-mutable struct GrB_Semiring
-    p::Ptr{Cvoid}
-    xtype::GType    # type of matrix A
-    ytype::GType    # type of matrix B
-    ztype::GType    # type of result z = fmult(x, y) -> matches with monoid type
-
-    GrB_Semiring() = new()
-    GrB_Semiring(s, xtype, ytype, ztype) = new(load_global(s), xtype, ytype, ztype)
-end
-
 # represent a unary operation without assigned type
 mutable struct UnaryOperator
     fun::Function
@@ -63,22 +45,21 @@ mutable struct BinaryOperator
 end
 
 mutable struct Monoid
-    binary_op::BinaryOperator
-    ops::Array{GrB_Monoid,1}
+    p::Ptr{Cvoid}
+    domain::GType
 
-    Monoid(bop) = new(bop, [])
-    
-    function Monoid()
-        mon = new()
-        mon.ops = []
-        return mon
-    end
+    Monoid() = new(C_NULL, NULL)
+    Monoid(mon, domain) = new(load_global(mon), domain)
 end
 
 mutable struct Semiring
-    impl::Array{GrB_Semiring,1}
+    p::Ptr{Cvoid}
+    xtype::GType    # type of matrix A
+    ytype::GType    # type of matrix B
+    ztype::GType    # type of result z = fmult(x, y) -> matches with monoid type
 
-    Semiring() = new([])
+    Semiring() = new(C_NULL, NULL, NULL, NULL)
+    Semiring(s, xtype, ytype, ztype) = new(load_global(s), xtype, ytype, ztype)
 end
 
 const Unaryop = Dict{Symbol,UnaryOperator}()
@@ -96,8 +77,8 @@ end
 
 _gb_pointer(op::GrB_UnaryOp) = op.p
 _gb_pointer(op::GrB_BinaryOp) = op.p
-_gb_pointer(op::GrB_Monoid) = op.p
-_gb_pointer(op::GrB_Semiring) = op.p
+_gb_pointer(op::Monoid) = op.p
+_gb_pointer(op::Semiring) = op.p
 
 # import Base:
 #         show, ==, pointer, convert, isless, Vector, getindex

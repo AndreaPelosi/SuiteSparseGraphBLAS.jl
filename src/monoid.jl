@@ -1,27 +1,13 @@
-Base.push!(m::Monoid, items...) = push!(m.ops, items...)
-
 # create new monoid from binary operation and identity value
 function monoid(s::Symbol, bin_op::BinaryOperator, identity::T) where T <: valid_types
     domain = j2gtype(T)
-    monoid = get!(Monoids, s, Monoid(bin_op))
-    index = findfirst(m->m.domain == domain, monoid.ops)
-    if index == nothing
-        bop = get_binaryop(bin_op, domain, domain, domain)
-        grb_monoid = GrB_Monoid_new(bop, identity)
-        push!(monoid, grb_monoid)
-    else
+    if haskey(Monoids, s)
         error("monoid already exists")
     end
-    return monoid
-end
-
-function get_monoid(monoid::Monoid, domain::GType)
-    index = findfirst(mon -> mon.domain == domain, monoid.ops)
-    if index == nothing
-        error("monoid not exists")
-    else
-        return monoid.ops[index]
-    end
+    bop = get_binaryop(bin_op, domain, domain, domain)
+    monoid = GrB_Monoid_new(bop, identity)
+    push!(Monoids, s => monoid)
+    return monoid    
 end
 
 function load_builtin_monoid()
@@ -31,9 +17,9 @@ function load_builtin_monoid()
             bpn = split(op, "_")
             type = str2gtype(string(bpn[end]))
             
-            monoid_name = Symbol(join(bpn[2:end - 1]))
-            monoid = get!(Monoids, monoid_name, Monoid())
-            push!(monoid, GrB_Monoid(op, type))
+            monoid_name = Symbol(join(bpn[2:end], "_"))
+            monoid = Monoid(op, type)
+            push!(Monoids, monoid_name => monoid)
         end
     end
 
@@ -50,7 +36,7 @@ function load_builtin_monoid()
 end
 
 function GrB_Monoid_new(binary_op::GrB_BinaryOp, identity::T) where T
-    monoid = GrB_Monoid()
+    monoid = Monoid()
     monoid.domain = j2gtype(T)
 
     monoid_ptr = pointer_from_objref(monoid)

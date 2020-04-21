@@ -20,7 +20,7 @@ function load_builtin_unaryop()
     ["BOOL", "UINT8", "UINT16", "UINT32", "UINT64", "INT8", "INT16", "INT32", "INT64", "FP32", "FP64"])
 
     gxb_uop = compile(["GxB"],
-    ["ONE", "ABS"],
+    ["ONE", "ABS", "LNOT"],
     ["BOOL", "UINT8", "UINT16", "UINT32", "UINT64", "INT8", "INT16", "INT32", "INT64", "FP32", "FP64"])
 
     for op in cat(grb_uop, gxb_uop, dims = 1)

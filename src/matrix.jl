@@ -8,6 +8,8 @@ mutable struct GBMatrix{T <: valid_types}
     
 end
 
+_gb_pointer(m::GBMatrix) = m.p
+
 function from_type(type::GType, nrows = 0, ncols = 0)
     m = GBMatrix{type.jtype}()
     GrB_Matrix_new(m, type, nrows, ncols)
@@ -15,16 +17,18 @@ function from_type(type::GType, nrows = 0, ncols = 0)
     return m
 end
 
-function from_lists(I, J, V, nrows = nothing, ncols = nothing, type = NULL, combine = NULL)
+function from_lists(I, J, V; nrows = nothing, ncols = nothing, type = NULL, combine = NULL)
     @assert length(I) == length(J) == length(V)
     if nrows == nothing
         nrows = max(I...) + 1
     end
     if ncols == nothing
-        nrows = max(J...) + 1
+        ncols = max(J...) + 1
     end
     if type == NULL
         type = j2gtype(eltype(V[1]))
+    elseif type.jtype != eltype(V[1])
+        V = convert.(type.jtype, V)
     end
     m = from_type(type, nrows, ncols)
 
@@ -70,6 +74,10 @@ end
 
 function findnz(m::GBMatrix)
     return GrB_Matrix_extractTuples(m)
+end
+
+function nnz(m::Matrix)
+    # TODO
 end
 
 function clear!(m::GBMatrix)
@@ -119,3 +127,14 @@ end
 
 getindex(m::GBMatrix, i::Colon, j::Colon) = copy(m)
 
+function mxm(A::GBMatrix, B::GBMatrix; semiring=nothing, mask=nothing, accum=nothing, desc=nothing)
+    rowA, colA = size(A)
+    rowB, colB = size(B)
+    @assert colA == rowB
+
+    if semiring == nothing
+        # TODO
+    else
+        
+    end
+end
