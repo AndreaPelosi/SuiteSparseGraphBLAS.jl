@@ -15,21 +15,23 @@ function load_builtin_monoid()
     function load(lst)
         for op in lst
             bpn = split(op, "_")
-            type = str2gtype(string(bpn[end]))
+            type = str2gtype(string(bpn[end-1]))
             
-            monoid_name = Symbol(join(bpn[2:end], "_"))
+            monoid_name = Symbol(join(bpn[2:end-1], "_"))
             monoid = Monoid(op, type)
             push!(Monoids, monoid_name => monoid)
         end
     end
 
-    grb_mon = compile(["GrB"],
+    grb_mon = compile(["GxB"],
     ["MIN", "MAX", "PLUS", "TIMES"],
-    ["BOOL", "UINT8", "UINT16", "UINT32", "UINT64", "INT8", "INT16", "INT32", "INT64", "FP32", "FP64"])
+    ["UINT8", "UINT16", "UINT32", "UINT64", "INT8", "INT16", "INT32", "INT64", "FP32", "FP64"],
+    ["MONOID"])
 
     grb_mon_bool = compile(["GxB"],
-    ["LOR", "LAND", "LXOR", "ISEQ"],
-    ["BOOL"])
+    ["LOR", "LAND", "LXOR", "EQ"],
+    ["BOOL"],
+    ["MONOID"])
 
     load(cat(grb_mon, grb_mon_bool, dims = 1))
         

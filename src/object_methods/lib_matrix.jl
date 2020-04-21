@@ -1,8 +1,3 @@
-import GraphBLASInterface:
-        GrB_Matrix_new, GrB_Matrix_build, GrB_Matrix_dup, GrB_Matrix_clear,
-        GrB_Matrix_nrows, GrB_Matrix_ncols, GrB_Matrix_nvals, GrB_Matrix_setElement,
-        GrB_Matrix_extractElement, GrB_Matrix_extractTuples
-
 """
     GrB_Matrix_new(A, type, nrows, ncols)
 

@@ -1,13 +1,16 @@
-function semiring(s::Symbol, sum::Monoid, mult::BinaryOperator)
-    # TODO
-    error("TODO")
+function semiring(s::Symbol, sum::Monoid, mult::BinaryOperator, xtype::GType, ytype=GType)
+    bop = get_binaryop(mult, sum.domain, xtype, ytype)
+    return semiring(s, sum, bop)
 end
 
-Base.push!(m::Semiring, items...) = push!(m.impl, items...)
-
-function get_semiring(semiring::Semiring, xtype::GType, ytype::GType, ztype::GType)
-    # TODO
-    error("TODO")
+function semiring(s::Symbol, sum::Monoid, mult::GrB_BinaryOp)
+    @assert sum.domain == mult.ztype
+    if haskey(Semirings, s)
+        error("semiring already exists")
+    end
+    semiring = GrB_Semiring_new(sum, mult)
+    push!(Semirings, s => semiring)
+    return semiring
 end
 
 function load_builtin_semiring()
@@ -17,9 +20,9 @@ function load_builtin_semiring()
             bpn = split(op, "_")
             type = str2gtype(string(bpn[end]))
             
-            semiring_name = Symbol(join(bpn[2:end - 1], "_"))
-            semiring = get!(Semirings, semiring_name, Semiring())
-            push!(semiring, GrB_Semiring(op, type, type, type == NULL ? type : ztype))
+            semiring_name = Symbol(join(bpn[2:end], "_"))
+            semiring = Semiring(op, type, type, ztype == NULL ? type : ztype)
+            push!(Semirings, semiring_name => semiring)
         end
     end
 
@@ -42,4 +45,28 @@ function load_builtin_semiring()
     load(gxb_comp, ztype = BOOL)
     load(gxb_bool)
         
+end
+
+"""
+    GrB_Semiring_new(monoid, binary_op)
+Initialize a GraphBLAS semiring with specified monoid and binary operator.
+"""
+function GrB_Semiring_new(monoid::Monoid, binary_op::GrB_BinaryOp)
+    semiring = Semiring()
+    semiring.xtype = binary_op.xtype
+    semiring.ytype = binary_op.ytype
+    semiring.ztype = binary_op.ztype
+    
+    semiring_ptr = pointer_from_objref(semiring)
+
+    check(GrB_Info(
+            ccall(
+                    dlsym(graphblas_lib, "GrB_Semiring_new"),
+                    Cint,
+                    (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+                    semiring_ptr, monoid.p, binary_op.p
+                )
+            )
+    )
+    return semiring
 end

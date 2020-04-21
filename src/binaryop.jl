@@ -45,7 +45,7 @@ function load_builtin_binaryop()
 end
 
 # get GrB_UnaryOp associated at UnaryOperation with a specific input domain type
-function get_binaryop(bop::BinaryOperator, xtype::GType, ztype::GType, ytype::GType)
+function get_binaryop(bop::BinaryOperator, ztype::GType, ytype::GType, xtype::GType)
     index = findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, bop.gb_bops)
     if index == nothing
         # TODO: try to create new unary op with specified domains
