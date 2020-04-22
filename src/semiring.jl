@@ -60,7 +60,7 @@ end
     GrB_Semiring_new(monoid, binary_op)
 Initialize a GraphBLAS semiring with specified monoid and binary operator.
 """
-function GrB_Semiring_new(monoid::Monoid, binary_op::GrB_BinaryOp)
+function GrB_Semiring_new(monoid::GrB_Monoid, binary_op::GrB_BinaryOp)
     semiring = GrB_Semiring()
     semiring.xtype = binary_op.xtype
     semiring.ytype = binary_op.ytype
