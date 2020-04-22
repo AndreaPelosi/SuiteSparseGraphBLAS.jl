@@ -10,6 +10,7 @@ const testdir = dirname(@__FILE__)
 tests = [
     "operator",
     "matrix",
+    "vector"
 ]
 
 @testset "SuiteSparseGraphBLAS" begin
