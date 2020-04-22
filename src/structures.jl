@@ -82,8 +82,8 @@ end
 
 _gb_pointer(op::GrB_UnaryOp) = op.p
 _gb_pointer(op::GrB_BinaryOp) = op.p
-_gb_pointer(op::Monoid) = op.p
-_gb_pointer(op::Semiring) = op.p
+_gb_pointer(op::GrB_Monoid) = op.p
+_gb_pointer(op::GrB_Semiring) = op.p
 
 # import Base:
 #         show, ==, pointer, convert, isless, Vector, getindex
