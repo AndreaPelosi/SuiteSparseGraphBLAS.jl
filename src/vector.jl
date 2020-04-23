@@ -33,7 +33,7 @@ function vector_from_lists(I, V; size = nothing, type = NULL, combine = NULL)
     combine_bop = get_binaryop(combine, type, type, type)
     
     v = vector_from_type(type, size)
-    GrB_Vector_build(v, I, V, size, combine_bop)
+    GrB_Vector_build(v, I, V, length(V), combine_bop)
     # TODO: add finalizer
     return v
 end
