@@ -18,7 +18,7 @@ count(d) = sum([length(d[k].impl) for k in keys(d)])
         t = xtype = SG.j2gtype(type)
         SG.unaryop(:SAME_TYPE, a->a, xtype = t, ztype = t)
         uop_type = Unaryop.SAME_TYPE
-        tmp = SG.get_unaryop(uop_type, t, t)
+        tmp = SG._get(uop_type, t, t)
         @test isa(tmp, SG.GrB_UnaryOp)
         @test tmp.xtype == t
         @test tmp.ztype == t
@@ -31,7 +31,7 @@ count(d) = sum([length(d[k].impl) for k in keys(d)])
         name = Symbol(:TYPE_, string(type))
         SG.unaryop(name, a->a, xtype = t, ztype = t)
         uop = Unaryop[name]
-        tmp = SG.get_unaryop(uop, t, t)
+        tmp = SG._get(uop, t, t)
         @test isa(tmp, SG.GrB_UnaryOp)
         @test tmp.xtype == t
         @test tmp.ztype == t
@@ -57,7 +57,7 @@ end
         t = xtype = SG.j2gtype(type)
         SG.binaryop(:SAME_TYPE, (a, b)->a + b, xtype = t, ytype = t, ztype = t)
         bop_type = Binaryop.SAME_TYPE
-        tmp = SG.get_binaryop(bop_type, t, t, t)
+        tmp = SG._get(bop_type, t, t, t)
         @test isa(tmp, SG.GrB_BinaryOp)
         @test tmp.xtype == t
         @test tmp.ytype == t
@@ -70,7 +70,7 @@ end
         name = Symbol(:TYPE_, string(type))
         SG.binaryop(name, (a, b)->a + b, xtype = t, ytype = t, ztype = t)
         bop = Binaryop[name]
-        tmp = SG.get_binaryop(bop, t, t, t)
+        tmp = SG._get(bop, t, t, t)
         @test isa(tmp, SG.GrB_BinaryOp)
         @test tmp.xtype == t
         @test tmp.ytype == t
@@ -118,7 +118,7 @@ end
     for t in valid_types
         type = SG.j2gtype(t)
         mon = SG.monoid(:TEST_MONOID, bop, t(0))
-        @test SG.get_monoid(mon, type).domain == type
+        @test SG._get(mon, type).domain == type
     end
 
 end
@@ -138,7 +138,7 @@ end
     @test sem.binaryop == bop
     @test isempty(sem.impl)
 
-    sem_int64 = SG.get_semiring(sem, INT64, INT64, INT64)
+    sem_int64 = SG._get(sem, INT64, INT64, INT64)
     @test isa(sem_int64, SG.GrB_Semiring)
     @test sem_int64.xtype == INT64 && sem_int64.ytype == INT64 && sem_int64.ztype == INT64
     @test length(Semirings.SEM_BUILTIN.impl) == 1
@@ -149,11 +149,11 @@ end
     mon = SG.monoid(:MON_USER, bop, Int8(0))
     sem1 = SG.semiring(:SEM_USER, mon, bop)
     @test isa(sem1, SG.Semiring)
-    sem_int64 = SG.get_semiring(sem1, INT64, INT64, INT64)
+    sem_int64 = SG._get(sem1, INT64, INT64, INT64)
     @test sem_int64.xtype == INT64
     @test sem_int64.ytype == INT64
     @test sem_int64.ztype == INT64
-    sem_int8 = SG.get_semiring(sem1, INT8, INT64, INT64)
+    sem_int8 = SG._get(sem1, INT8, INT64, INT64)
     @test sem_int8.xtype == INT64
     @test sem_int8.ytype == INT64
     @test sem_int8.ztype == INT8

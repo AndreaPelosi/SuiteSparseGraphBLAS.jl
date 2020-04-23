@@ -37,7 +37,7 @@ end
 
 # represent a unary operation without assigned type
 mutable struct UnaryOperator
-    fun::Union{Function, Nothing}
+    fun::Union{Function,Nothing}
     impl::Vector{GrB_UnaryOp}
 
     UnaryOperator() = new(nothing, [])
@@ -45,7 +45,7 @@ mutable struct UnaryOperator
 end
 
 mutable struct BinaryOperator
-    fun::Union{Function, Nothing}
+    fun::Union{Function,Nothing}
     impl::Vector{GrB_BinaryOp}
 
     BinaryOperator() = new(nothing, [])
@@ -59,11 +59,11 @@ mutable struct Monoid
 end
 
 mutable struct Semiring
-    monoid::Union{Monoid, Nothing}
-    binaryop::Union{BinaryOperator, Nothing}
+    monoid::Union{Monoid,Nothing}
+    binaryop::Union{BinaryOperator,Nothing}
     impl::Vector{GrB_Semiring}
 
-    Semiring() = new(nothing, nothing,[])
+    Semiring() = new(nothing, nothing, [])
     Semiring(monoid, binaryop) = new(monoid, binaryop, [])
 end
 

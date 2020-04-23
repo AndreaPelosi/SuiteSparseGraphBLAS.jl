@@ -40,8 +40,9 @@ function load_builtin_binaryop()
     
 end
 
-# get GrB_BinaryOp associated at UnaryOperation with a specific input domain type
-function get_binaryop(binary_op::BinaryOperator, ztype::GType, xtype::GType, ytype::GType)
+# get GrB_BinaryOp associated at BinaryOperation with a specific input domain type
+function _get(binary_op::BinaryOperator, types...)
+    ztype, xtype, ytype = types
     index = findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, binary_op.impl)
     if index == nothing
         if binary_op.fun != nothing

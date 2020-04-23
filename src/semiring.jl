@@ -3,14 +3,15 @@ function semiring(s::Symbol, add::Monoid, mult::BinaryOperator)
     return sem
 end
 
-function get_semiring(semiring::Semiring, ztype::GType, xtype::GType, ytype::GType)
+function _get(semiring::Semiring, types...)
+    ztype, xtype, ytype = types
     index = findfirst(sem -> sem.xtype == xtype && sem.ytype == ytype && sem.ztype == ztype, semiring.impl)
     if index == nothing
         # create a semiring with given types
         if semiring.monoid != nothing && semiring.binaryop != nothing
             # user defined semiring
-            bop = get_binaryop(semiring.binaryop, ztype, xtype, ytype)
-            mon = get_monoid(semiring.monoid, ztype)
+            bop = _get(semiring.binaryop, ztype, xtype, ytype)
+            mon = _get(semiring.monoid, ztype)
 
             sem = GrB_Semiring_new(mon, bop)
             push!(semiring.impl, sem)

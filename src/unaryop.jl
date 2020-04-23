@@ -31,7 +31,8 @@ function load_builtin_unaryop()
 end
 
 # get GrB_UnaryOp associated at UnaryOperator with a specific input domain type
-function get_unaryop(uop::UnaryOperator, ztype::GType, xtype::GType)
+function _get(uop::UnaryOperator, types...)
+    ztype, xtype = types
     index = findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.impl)
     if index == nothing
         # TODO: try to create new unary op with specified domains

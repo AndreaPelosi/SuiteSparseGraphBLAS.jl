@@ -5,14 +5,15 @@ function monoid(s::Symbol, bin_op::BinaryOperator, identity::T) where T <: valid
     index = findfirst(mon -> mon.domain == domain, monoid.impl)
     if index == nothing
         # create a new monoid
-        bop = get_binaryop(bin_op, domain, domain, domain)
+        bop = _get(bin_op, domain, domain, domain)
         mon = GrB_Monoid_new(bop, identity)
         push!(monoid.impl, mon)
     end
     return monoid
 end
 
-function get_monoid(monoid::Monoid, domain::GType)
+function _get(monoid::Monoid, types...)
+    domain = types[1]
     index = findfirst(mon -> mon.domain == domain, monoid.impl)
     if index == nothing
         error("monoid not find")
