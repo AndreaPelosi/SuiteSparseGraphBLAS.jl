@@ -1,4 +1,4 @@
-import Base: getindex, size, copy, lastindex, setindex!, getindex
+import Base: getindex, size, copy, lastindex, setindex!, getindex, eltype
 
 mutable struct GBMatrix{T <: valid_types}
     p::Ptr{Cvoid}
@@ -25,8 +25,8 @@ function matrix_from_lists(I, J, V; nrows = nothing, ncols = nothing, type = NUL
         ncols = max(J...) + 1
     end
     if type == NULL
-        type = j2gtype(eltype(V[1]))
-    elseif type.jtype != eltype(V[1])
+        type = j2gtype(eltype(V))
+    elseif type.jtype != eltype(V)
         V = convert.(type.jtype, V)
     end
     m = matrix_from_type(type, nrows, ncols)
@@ -116,15 +116,20 @@ function getindex(m::GBMatrix, i::Integer, j::Integer)
     end
 end
 
-function getindex(m::GBMatrix, i::Colon, j::Integer)
-    # TODO: with GBVector
-end
-
-function getindex(m::GBMatrix, i::Integer, j::Colon)
-    # TODO: with GBVector
-end
-
+getindex(m::GBMatrix, i::Colon, j::Integer) = _extract_col(m, j, _all_rows(m))
+getindex(m::GBMatrix, i::Integer, j::Colon) = error("TODO: extract row")
 getindex(m::GBMatrix, i::Colon, j::Colon) = copy(m)
+getindex(m::GBMatrix, i::Union{UnitRange, Vector}, j::Integer) = _extract_col(m, j, collect(i))
+getindex(m::GBMatrix, i::Integer, j::Union{UnitRange, Vector}) = error("TODO: extract row")
+getindex(m::GBMatrix, i::Union{UnitRange, Vector}, j::Union{UnitRange, Vector}) =
+    _extract_matrix(m, collect(i), collect(j))
+getindex(m::GBMatrix, i::Union{UnitRange, Vector}, j::Colon) =
+    _extract_matrix(m, collect(i), _all_cols(m))
+getindex(m::GBMatrix, i::Colon, j::Union{UnitRange, Vector}) =
+    _extract_matrix(m, _all_rows(m), collect(j))
+
+_all_rows(m) = collect(0:size(m, 1)-1)
+_all_cols(m) = collect(0:size(m, 2)-1)
 
 function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = nothing, mask = nothing, accum = nothing, desc = nothing)
     rowA, colA = size(A)
