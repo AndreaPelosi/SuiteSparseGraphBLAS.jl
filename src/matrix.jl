@@ -1,4 +1,4 @@
-import Base: getindex, size, copy, lastindex, setindex!, getindex, eltype
+import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint
     
 _gb_pointer(m::GBMatrix) = m.p
 
@@ -110,10 +110,10 @@ function getindex(m::GBMatrix, i::Integer, j::Integer)
 end
 
 getindex(m::GBMatrix, i::Colon, j::Integer) = _extract_col(m, j, _all_rows(m))
-getindex(m::GBMatrix, i::Integer, j::Colon) = error("TODO: extract row")
+getindex(m::GBMatrix, i::Integer, j::Colon) = _extract_row(m, i, _all_cols(m))
 getindex(m::GBMatrix, i::Colon, j::Colon) = copy(m)
 getindex(m::GBMatrix, i::Union{UnitRange, Vector}, j::Integer) = _extract_col(m, j, collect(i))
-getindex(m::GBMatrix, i::Integer, j::Union{UnitRange, Vector}) = error("TODO: extract row")
+getindex(m::GBMatrix, i::Integer, j::Union{UnitRange, Vector}) = _extract_row(m, i, collect(j))
 getindex(m::GBMatrix, i::Union{UnitRange, Vector}, j::Union{UnitRange, Vector}) =
     _extract_matrix(m, collect(i), collect(j))
 getindex(m::GBMatrix, i::Union{UnitRange, Vector}, j::Colon) =
@@ -379,6 +379,8 @@ function transpose(A::GBMatrix; out = nothing, mask = nothing, accum = nothing, 
     return out
 end
 
+adjoint(A::GBMatrix) = transpose(A)
+
 # function transpose!(A::GBMatrix; mask = nothing, accum = nothing, desc = nothing)
 #     return transpose(A, out = A, mask = mask, accum = accum, desc = desc)
 # end
@@ -441,8 +443,9 @@ function _extract_col(A::GBMatrix, col, rows::Vector{I}; out = nothing, mask = n
     return out
 end
 
-function _extract_row(A)
-    # TODO: extract_col(A', ...)
+function _extract_row(A::GBMatrix, row, cols::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+    # TODO: rewrite with transpose descriptor
+    return _extract_col(A', row, cols, out=out, mask=mask, accum=accum, desc=desc)
 end
 
 function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
