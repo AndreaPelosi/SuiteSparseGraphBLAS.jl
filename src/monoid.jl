@@ -13,7 +13,7 @@ function monoid(s::Symbol, bin_op::BinaryOperator, identity::T) where T <: valid
 end
 
 function _get(monoid::Monoid, types...)
-    domain = types[1]
+    (domain,) = types
     index = findfirst(mon -> mon.domain == domain, monoid.impl)
     if index == nothing
         error("monoid not find")
