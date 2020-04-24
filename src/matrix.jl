@@ -152,7 +152,7 @@ function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = nothing, mask =
     # TODO: desc
     desc = NULL
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_mxm"),
             Cint,
@@ -161,7 +161,7 @@ function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = nothing, mask =
             _gb_pointer(A), _gb_pointer(B), _gb_pointer(desc)
             )
         )
-    )
+    
     return out
 end
 
@@ -185,7 +185,7 @@ function vxm(u::GBVector, A::GBMatrix; out = nothing, semiring = nothing, mask =
     # TODO: desc
     desc = NULL
     
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_vxm"),
             Cint,
@@ -194,7 +194,7 @@ function vxm(u::GBVector, A::GBMatrix; out = nothing, semiring = nothing, mask =
             _gb_pointer(u), _gb_pointer(A), _gb_pointer(desc)
             )
         )
-    )
+    
     return out
 
 end
@@ -219,7 +219,7 @@ function mxv(A::GBMatrix, u::GBVector; out = nothing, semiring = nothing, mask =
     # TODO: desc
     desc = NULL
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_mxv"),
             Cint,
@@ -228,7 +228,7 @@ function mxv(A::GBMatrix, u::GBVector; out = nothing, semiring = nothing, mask =
             _gb_pointer(A), _gb_pointer(u), _gb_pointer(desc)
             )
         )
-    )
+    
     return out
 end
 
@@ -254,7 +254,7 @@ function emult(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_eWiseMult_Matrix_" * suffix),
             Cint,
@@ -263,7 +263,7 @@ function emult(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask
             _gb_pointer(A), _gb_pointer(B), _gb_pointer(desc)
             )
         )
-    )
+    
     return out
 end
 
@@ -289,7 +289,7 @@ function eadd(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask 
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_eWiseAdd_Matrix_" * suffix),
             Cint,
@@ -298,7 +298,7 @@ function eadd(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask 
             _gb_pointer(A), _gb_pointer(B), _gb_pointer(desc)
             )
         )
-    )
+    
     return out
 end
 
@@ -319,7 +319,7 @@ function apply(A::GBMatrix; out = nothing, unaryop = nothing, mask = nothing, ac
     # TODO: desc
     desc = NULL
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Matrix_apply"),
             Cint,
@@ -328,7 +328,7 @@ function apply(A::GBMatrix; out = nothing, unaryop = nothing, mask = nothing, ac
             _gb_pointer(A), _gb_pointer(desc)
             )
         )
-    )
+    
     return out
 end
 
@@ -358,7 +358,7 @@ function reduce_vector(A::GBMatrix; out = nothing, operator = nothing, mask = no
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Matrix_reduce_" * suffix),
             Cint,
@@ -367,7 +367,7 @@ function reduce_vector(A::GBMatrix; out = nothing, operator = nothing, mask = no
             _gb_pointer(A), _gb_pointer(desc)
             )
         )
-    )
+    
     return out
 end
 
@@ -384,7 +384,7 @@ function reduce_scalar(A::GBMatrix{T}; monoid = nothing, accum = nothing, desc =
 
     scalar = Ref(T(0))
     
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Matrix_reduce_" * suffix(T)),
             Cint,
@@ -392,7 +392,7 @@ function reduce_scalar(A::GBMatrix{T}; monoid = nothing, accum = nothing, desc =
             scalar, _gb_pointer(accum), _gb_pointer(monoid_impl), _gb_pointer(A), _gb_pointer(desc)
             )
         )
-    )
+    
     return scalar[]
 end
 
@@ -408,7 +408,7 @@ function transpose(A::GBMatrix; out = nothing, mask = nothing, accum = nothing, 
     # TODO: desc
     desc = NULL
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_transpose"),
             Cint,
@@ -416,7 +416,7 @@ function transpose(A::GBMatrix; out = nothing, mask = nothing, accum = nothing, 
             _gb_pointer(out), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(A), _gb_pointer(desc)
             )
         )
-    )
+    
     return out
 end
 
@@ -441,7 +441,7 @@ function kron(A::GBMatrix, B::GBMatrix; out = nothing, binaryop = nothing, mask 
     # TODO: desc
     desc = NULL
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GxB_kron"),
             Cint,
@@ -450,7 +450,7 @@ function kron(A::GBMatrix, B::GBMatrix; out = nothing, binaryop = nothing, mask 
             _gb_pointer(A), _gb_pointer(B), _gb_pointer(desc)
             )
         )
-    )
+    
     return out
 end
 
@@ -469,7 +469,7 @@ function _extract_col(A::GBMatrix, col, rows::Vector{I}; out = nothing, mask = n
     # TODO: desc
     desc = NULL
     
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Col_extract"),
             Cint,
@@ -478,7 +478,7 @@ function _extract_col(A::GBMatrix, col, rows::Vector{I}; out = nothing, mask = n
             _gb_pointer(A), pointer(rows), ni, col, _gb_pointer(desc)
             )
         )
-    )
+    
     return out
 end
 
@@ -501,7 +501,7 @@ function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = no
     # TODO: desc
     desc = NULL
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Matrix_extract"),
             Cint,
@@ -510,7 +510,7 @@ function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = no
             pointer(rows), ni, pointer(cols), nj, _gb_pointer(desc)
             )
         )
-    )
+    
     return out
 end
 
@@ -522,7 +522,7 @@ function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Vector{I}; mask = 
     # TODO: desc
     desc = NULL
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Row_assign"),
             Cint,
@@ -531,7 +531,7 @@ function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Vector{I}; mask = 
             row, pointer(cols), length(cols), _gb_pointer(desc)
             )
         )
-    )
+    
 end
 
 function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64, Int64}
@@ -542,7 +542,7 @@ function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Vector{I}; mask = 
     # TODO: desc
     desc = NULL
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Col_assign"),
             Cint,
@@ -551,7 +551,7 @@ function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Vector{I}; mask = 
             pointer(rows), length(rows), col, _gb_pointer(desc)
             )
         )
-    )
+    
 end
 
 function _assign_matrix!()

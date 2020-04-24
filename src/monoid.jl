@@ -55,14 +55,15 @@ function GrB_Monoid_new(binary_op::GrB_BinaryOp, identity::T) where T
     monoid_ptr = pointer_from_objref(monoid)
     fn_name = "GrB_Monoid_new_" * suffix(T)
 
-    check(GrB_Info(ccall(dlsym(
-        graphblas_lib, fn_name),
-        Cint,
-        (Ptr{Cvoid}, Ptr{Cvoid}, Cintmax_t),
-        monoid_ptr,
-        binary_op.p,
-        identity)
+    check(
+        ccall(
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Cintmax_t),
+            monoid_ptr,
+            _gb_pointer(binary_op),
+            identity
+            )
         )
-    )
     return monoid
 end

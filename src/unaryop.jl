@@ -58,9 +58,14 @@ function GrB_UnaryOp_new(fn::Function, ztype::GType{T}, xtype::GType{U}) where {
 
     unaryop_fn_C = @cfunction($unaryop_fn, Cvoid, (Ptr{T}, Ref{U}))
 
-    check(GrB_Info(ccall(dlsym(graphblas_lib, "GrB_UnaryOp_new"), Cint,
-                   (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
-                   op_ptr, unaryop_fn_C, ztype.gbtype, xtype.gbtype)))
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_UnaryOp_new"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+            op_ptr, unaryop_fn_C, _gb_pointer(ztype), _gb_pointer(xtype)
+            )
+        )
 
     return op
 end

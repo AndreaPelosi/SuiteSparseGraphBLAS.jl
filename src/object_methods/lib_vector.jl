@@ -1,7 +1,7 @@
-function GrB_Vector_new(v::GBVector{T}, type::GType{T}, n::Union{Int64, UInt64}) where T
+function GrB_Vector_new(v::GBVector{T}, type::GType{T}, n::Union{Int64,UInt64}) where T
     v_ptr = pointer_from_objref(v)
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Vector_new"),
             Cint,
@@ -9,7 +9,6 @@ function GrB_Vector_new(v::GBVector{T}, type::GType{T}, n::Union{Int64, UInt64})
             v_ptr, _gb_pointer(type), n
             )
         )
-    )
 end
 
 """
@@ -21,7 +20,7 @@ Initialize a vector with the same domain, size, and contents as another vector.
 function GrB_Vector_dup(w::GBVector{T}, u::GBVector{T}) where T
     w_ptr = pointer_from_objref(w)
 
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Vector_dup"),
             Cint,
@@ -29,7 +28,6 @@ function GrB_Vector_dup(w::GBVector{T}, u::GBVector{T}) where T
             w_ptr, _gb_pointer(u)
             )
         )
-    )
 end
 
 """
@@ -39,15 +37,14 @@ Remove all the elements (tuples) from a vector.
 
 """
 function GrB_Vector_clear(v::GBVector)
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Vector_clear"),
             Cint,
-            (Ptr{Cvoid}, ),
+            (Ptr{Cvoid},),
             _gb_pointer(v)
             )
         )
-    )
 end
 
 """
@@ -59,7 +56,7 @@ Else return `GrB_Info` error code.
 """
 function GrB_Vector_size(v::GBVector)
     n = Ref(UInt64(0))
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Vector_size"),
             Cint,
@@ -67,7 +64,7 @@ function GrB_Vector_size(v::GBVector)
             n, _gb_pointer(v)
             )
         )
-    )
+    
     return n[]
 end
 
@@ -80,7 +77,7 @@ Else return `GrB_Info` error code.
 """
 function GrB_Vector_nvals(v::GBVector)
     nvals = Ref(UInt64(0))
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, "GrB_Vector_nvals"),
             Cint,
@@ -88,7 +85,7 @@ function GrB_Vector_nvals(v::GBVector)
             nvals, _gb_pointer(v)
             )
         )
-    )
+    
     return nvals[]
 end
 
@@ -98,20 +95,19 @@ end
 Store elements from tuples into a vector.
 
 """
-function GrB_Vector_build(w::GBVector{T}, I::Vector{U}, X::Vector{T}, nvals::U, dup::GrB_BinaryOp) where {T, U <: Union{Int64, UInt64}}
+function GrB_Vector_build(w::GBVector{T}, I::Vector{U}, X::Vector{T}, nvals::U, dup::GrB_BinaryOp) where {T,U <: Union{Int64,UInt64}}
     I_ptr = pointer(I)
     X_ptr = pointer(X)
     fn_name = "GrB_Vector_build_" * suffix(T)
 
-    check(GrB_Info(
+    check(
         ccall(
-                dlsym(graphblas_lib, fn_name),
-                Cint,
-                (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{T}, Cuintmax_t, Ptr{Cvoid}),
-                _gb_pointer(w), I_ptr, X_ptr, nvals, _gb_pointer(dup)
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{T}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(w), I_ptr, X_ptr, nvals, _gb_pointer(dup)
             )
         )
-    )
 end
 
 """
@@ -120,9 +116,9 @@ end
 Set one element of a vector to a given value, w[i] = x.
 
 """
-function GrB_Vector_setElement(w::GBVector{T}, x::T, i::Union{Int64, UInt64}) where T
+function GrB_Vector_setElement(w::GBVector{T}, x::T, i::Union{Int64,UInt64}) where T
     fn_name = "GrB_Vector_setElement_" * suffix(T)
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, fn_name),
             Cint,
@@ -130,12 +126,11 @@ function GrB_Vector_setElement(w::GBVector{T}, x::T, i::Union{Int64, UInt64}) wh
             _gb_pointer(w), x, i
             )
         )
-    )
 end
 
-function GrB_Vector_setElement(w::GBVector{UInt64}, x::UInt64, i::Union{Int64, UInt64})
+function GrB_Vector_setElement(w::GBVector{UInt64}, x::UInt64, i::Union{Int64,UInt64})
     fn_name = "GrB_Vector_setElement_UINT64"
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, fn_name),
             Cint,
@@ -143,12 +138,11 @@ function GrB_Vector_setElement(w::GBVector{UInt64}, x::UInt64, i::Union{Int64, U
             _gb_pointer(w), x, i
             )
         )
-    )
 end
 
-function GrB_Vector_setElement(w::GBVector{Float32}, x::Float32, i::Union{Int64, UInt64})
+function GrB_Vector_setElement(w::GBVector{Float32}, x::Float32, i::Union{Int64,UInt64})
     fn_name = "GrB_Vector_setElement_FP32"
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, fn_name),
             Cint,
@@ -156,12 +150,11 @@ function GrB_Vector_setElement(w::GBVector{Float32}, x::Float32, i::Union{Int64,
             _gb_pointer(w), x, i
             )
         )
-    )
 end
 
-function GrB_Vector_setElement(w::GBVector{Float64}, x::Float64, i::Union{Int64, UInt64})
+function GrB_Vector_setElement(w::GBVector{Float64}, x::Float64, i::Union{Int64,UInt64})
     fn_name = "GrB_Vector_setElement_FP64"
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, fn_name),
             Cint,
@@ -169,7 +162,6 @@ function GrB_Vector_setElement(w::GBVector{Float64}, x::Float64, i::Union{Int64,
             _gb_pointer(w), x, i
             )
         )
-    )
 end
 
 """
@@ -179,11 +171,11 @@ Return element of a vector at a given index (v[i]) if successful.
 Else return `GrB_Info` error code.
 
 """
-function GrB_Vector_extractElement(v::GBVector{T}, i::Union{Int64, UInt64}) where T
+function GrB_Vector_extractElement(v::GBVector{T}, i::Union{Int64,UInt64}) where T
     fn_name = "GrB_Vector_extractElement_" * suffix(T)
 
     element = Ref(T(0))
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, fn_name),
             Cint,
@@ -191,7 +183,7 @@ function GrB_Vector_extractElement(v::GBVector{T}, i::Union{Int64, UInt64}) wher
             element, _gb_pointer(v), i
             )
         )
-    )
+    
     return element[]
 end
 
@@ -211,7 +203,7 @@ function GrB_Vector_extractTuples(v::GBVector{T}) where T
     n = Ref(UInt64(nvals))
 
     fn_name = "GrB_Vector_extractTuples_" * suffix(T)
-    check(GrB_Info(
+    check(
         ccall(
             dlsym(graphblas_lib, fn_name),
             Cint,
@@ -219,6 +211,6 @@ function GrB_Vector_extractTuples(v::GBVector{T}) where T
             pointer(I), pointer(X), n, _gb_pointer(v)
             )
         )
-    )
+    
     return I, X
 end

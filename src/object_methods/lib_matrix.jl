@@ -7,15 +7,15 @@ Initialize a matrix with specified domain and dimensions.
 function GrB_Matrix_new(A::GBMatrix, type::GType, nrows::Union{Int64,UInt64}, ncols::Union{Int64,UInt64}) where T
     A_ptr = pointer_from_objref(A)
 
-    check(GrB_Info(
+    check(
         ccall(
-                dlsym(graphblas_lib, "GrB_Matrix_new"),
-                Cint,
-                (Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Cuintmax_t),
-                A_ptr, _gb_pointer(type), nrows, ncols
+            dlsym(graphblas_lib, "GrB_Matrix_new"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Cuintmax_t),
+            A_ptr, _gb_pointer(type), nrows, ncols
             )
         )
-    )
+    
 end
 
 """
@@ -29,15 +29,15 @@ function GrB_Matrix_build(C::GBMatrix{T}, I::Vector{U}, J::Vector{U}, X::Vector{
     J_ptr = pointer(J)
     X_ptr = pointer(X)
     fn_name = "GrB_Matrix_build_" * suffix(T)
-    check(GrB_Info(
+    check(
         ccall(
-                dlsym(graphblas_lib, fn_name),
-                Cint,
-                (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{T}, Cuintmax_t, Ptr{Cvoid}),
-                _gb_pointer(C), I_ptr, J_ptr, X_ptr, nvals, _gb_pointer(dup)
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{T}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(C), I_ptr, J_ptr, X_ptr, nvals, _gb_pointer(dup)
             )
         )
-    )
+    
 end
 
 """
@@ -49,15 +49,15 @@ Else return `GrB_Info` error code.
 """
 function GrB_Matrix_nrows(A::GBMatrix)
     nrows = Ref(UInt64(0))
-    check(GrB_Info(
-                ccall(
-                        dlsym(graphblas_lib, "GrB_Matrix_nrows"),
-                        Cint,
-                        (Ptr{UInt64}, Ptr{Cvoid}),
-                        nrows, _gb_pointer(A)
-                    )
-                )
-    )
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Matrix_nrows"),
+            Cint,
+            (Ptr{UInt64}, Ptr{Cvoid}),
+            nrows, _gb_pointer(A)
+            )
+        )
+    
     return nrows[]
 end
 
@@ -70,15 +70,15 @@ Else return `GrB_Info` error code.
 """
 function GrB_Matrix_ncols(A::GBMatrix)
     ncols = Ref(UInt64(0))
-    check(GrB_Info(
-                ccall(
-                        dlsym(graphblas_lib, "GrB_Matrix_ncols"),
-                        Cint,
-                        (Ptr{UInt64}, Ptr{Cvoid}),
-                        ncols, _gb_pointer(A)
-                    )
-                )
-    )
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Matrix_ncols"),
+            Cint,
+            (Ptr{UInt64}, Ptr{Cvoid}),
+            ncols, _gb_pointer(A)
+            )
+        )
+    
     return ncols[]
 end
 
@@ -91,15 +91,15 @@ Else return `GrB_Info` error code..
 """
 function GrB_Matrix_nvals(A::GBMatrix)
     nvals = Ref(UInt64(0))
-    check(GrB_Info(
-                ccall(
-                        dlsym(graphblas_lib, "GrB_Matrix_nvals"),
-                        Cint,
-                        (Ptr{UInt64}, Ptr{Cvoid}),
-                        nvals, _gb_pointer(A)
-                    )
-                )
-    )
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Matrix_nvals"),
+            Cint,
+            (Ptr{UInt64}, Ptr{Cvoid}),
+            nvals, _gb_pointer(A)
+            )
+        )
+    
     return nvals[]
 end
 
@@ -112,15 +112,15 @@ Initialize a new matrix with the same domain, dimensions, and contents as anothe
 function GrB_Matrix_dup(C::GBMatrix{T}, A::GBMatrix{T}) where T
     C_ptr = pointer_from_objref(C)
 
-    check(GrB_Info(
+    check(
         ccall(
-                dlsym(graphblas_lib, "GrB_Matrix_dup"),
-                Cint,
-                (Ptr{Cvoid}, Ptr{Cvoid}),
-                C_ptr, _gb_pointer(A)
+            dlsym(graphblas_lib, "GrB_Matrix_dup"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}),
+            C_ptr, _gb_pointer(A)
             )
         )
-    )
+    
 end
 
 """
@@ -130,15 +130,14 @@ Remove all elements from a matrix.
 
 """
 function GrB_Matrix_clear(A::GBMatrix)
-    check(GrB_Info(
+    check(
         ccall(
-                dlsym(graphblas_lib, "GrB_Matrix_clear"),
-                Cint,
-                (Ptr{Cvoid},),
-                _gb_pointer(A)
+            dlsym(graphblas_lib, "GrB_Matrix_clear"),
+            Cint,
+            (Ptr{Cvoid},),
+            _gb_pointer(A)
             )
         )
-    )
 end
 
 """
@@ -149,54 +148,50 @@ Set one element of a matrix to a given value, C[I][J] = X.
 """
 function GrB_Matrix_setElement(C::GBMatrix{T}, X::T, I::U, J::U) where {T,U <: Integer}
     fn_name = "GrB_Matrix_setElement_" * suffix(T)
-    check(GrB_Info(
+    check(
         ccall(
-                dlsym(graphblas_lib, fn_name),
-                Cint,
-                (Ptr{Cvoid}, Cintmax_t, Cuintmax_t, Cuintmax_t),
-                _gb_pointer(C), X, I, J
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Cintmax_t, Cuintmax_t, Cuintmax_t),
+            _gb_pointer(C), X, I, J
             )
         )
-    )
 end
 
 function GrB_Matrix_setElement(C::GBMatrix{UInt64}, X::UInt64, I::Integer, J::Integer)
     fn_name = "GrB_Matrix_setElement_UINT64"
-    check(GrB_Info(
+    check(
         ccall(
-                dlsym(graphblas_lib, fn_name),
-                Cint,
-                (Ptr{Cvoid}, Cuintmax_t, Cuintmax_t, Cuintmax_t),
-                _gb_pointer(C), X, I, J
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Cuintmax_t, Cuintmax_t, Cuintmax_t),
+            _gb_pointer(C), X, I, J
             )
         )
-    )
 end
 
 function GrB_Matrix_setElement(C::GBMatrix{Float32}, X::Float32, I::Integer, J::Integer)
     fn_name = "GrB_Matrix_setElement_FP32"
-    check(GrB_Info(
+    check(
         ccall(
-                dlsym(graphblas_lib, fn_name),
-                Cint,
-                (Ptr{Cvoid}, Cfloat, Cuintmax_t, Cuintmax_t),
-                _gb_pointer(C), X, I, J
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Cfloat, Cuintmax_t, Cuintmax_t),
+            _gb_pointer(C), X, I, J
             )
         )
-    )
 end
 
 function GrB_Matrix_setElement(C::GBMatrix{Float64}, X::Float64, I::Integer, J::Integer)
     fn_name = "GrB_Matrix_setElement_FP64"
-    check(GrB_Info(
+    check(
         ccall(
-                dlsym(graphblas_lib, fn_name),
-                Cint,
-                (Ptr{Cvoid}, Cdouble, Cuintmax_t, Cuintmax_t),
-                _gb_pointer(C), X, I, J
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Cdouble, Cuintmax_t, Cuintmax_t),
+            _gb_pointer(C), X, I, J
             )
         )
-    )
 end
 
 """
@@ -210,15 +205,15 @@ function GrB_Matrix_extractElement(A::GBMatrix{T}, row_index::U, col_index::U) w
     fn_name = "GrB_Matrix_extractElement_" * suffix(T)
 
     element = Ref(T(0))
-    check(GrB_Info(
-                ccall(
-                        dlsym(graphblas_lib, fn_name),
-                        Cint,
-                        (Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Cuintmax_t),
-                        element, _gb_pointer(A), row_index, col_index
-                    )
-                )
-    )
+    check(
+        ccall(
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Cuintmax_t),
+            element, _gb_pointer(A), row_index, col_index
+            )
+        )
+
     return element[]
 end
 
@@ -239,15 +234,14 @@ function GrB_Matrix_extractTuples(A::GBMatrix{T}) where T
     n = Ref(UInt64(nvals))
 
     fn_name = "GrB_Matrix_extractTuples_" * suffix(T)
-    check(GrB_Info(
-                ccall(
-                        dlsym(graphblas_lib, fn_name),
-                        Cint,
-                        (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{UInt64}, Ptr{Cvoid}),
-                        pointer(row_indices), pointer(col_indices), pointer(vals), n, _gb_pointer(A)
-                    )
-                )
-    )
+    check(
+        ccall(
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{UInt64}, Ptr{Cvoid}),
+            pointer(row_indices), pointer(col_indices), pointer(vals), n, _gb_pointer(A)
+            )
+        )
     
     return row_indices, col_indices, vals
 end

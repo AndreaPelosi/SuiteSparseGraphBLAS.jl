@@ -27,49 +27,32 @@ function compile(lst...)
     end
 end
 
-@enum GrB_Info begin
-    GrB_SUCCESS = 0                 # all is well
-    GrB_NO_VALUE = 1                # A(ij) requested but not there
-    GrB_UNINITIALIZED_OBJECT = 2    # object has not been initialized
-    GrB_INVALID_OBJECT = 3          # object is corrupted
-    GrB_NULL_POINTER = 4            # input pointer is NULL
-    GrB_INVALID_VALUE = 5           # generic error code; some value is bad
-    GrB_INVALID_INDEX = 6           # a row or column index is out of bounds
-    GrB_DOMAIN_MISMATCH = 7         # object domains are not compatible
-    GrB_DIMENSION_MISMATCH = 8      # matrix dimensions do not match
-    GrB_OUTPUT_NOT_EMPTY = 9        # output matrix already has values in it
-    GrB_OUT_OF_MEMORY = 10          # out of memory
-    GrB_INSUFFICIENT_SPACE = 11     # output array not large enough
-    GrB_INDEX_OUT_OF_BOUNDS = 12    # a row or column index is out of bounds
-    GrB_PANIC = 13                  # SuiteSparse:GraphBLAS only panics if a critical section fails
-end
-
 function check(info)
-    if info == GrB_NO_VALUE
+    if info == 1        # NO_VALUE
         throw(GraphBLASNoValueException())
-    elseif info == GrB_UNINITIALIZED_OBJECT
+    elseif info == 2    # UNINITIALIZED_OBJECT
         throw(GraphBLASUninitializedObjectException())
-    elseif info == GrB_INVALID_OBJECT
+    elseif info == 3    # INVALID_OBJECT
         throw(GraphBLASInvalidObjectException())
-    elseif info == GrB_NULL_POINTER
+    elseif info == 4    # NULL_POINTER
         throw(GraphBLASNullPointerException())
-    elseif info == GrB_INVALID_VALUE
+    elseif info == 5    # GrB_INVALID_VALUE
         throw(GraphBLASInvalidValueException())
-    elseif info == GrB_INVALID_INDEX
+    elseif info == 6    # GrB_INVALID_INDEX
         throw(GraphBLASInvalidIndexException())
-    elseif info == GrB_DOMAIN_MISMATCH
+    elseif info == 7    # DOMAIN_MISMATCH
         throw(GraphBLASDomainMismatchException())
-    elseif info == GrB_DIMENSION_MISMATCH
+    elseif info == 8    # DIMENSION_MISMATCH
         throw(GraphBLASDimensionMismatchException())
-    elseif info == GrB_OUTPUT_NOT_EMPTY
+    elseif info == 9    # OUTPUT_NOT_EMPTY
         throw(GraphBLASOutputNotEmptyException())
-    elseif info == GrB_OUT_OF_MEMORY
+    elseif info == 10   # OUT_OF_MEMORY
         throw(GraphBLASOutOfMemoryException())
-    elseif info == GrB_INSUFFICIENT_SPACE
+    elseif info == 11   # INSUFFICIENT_SPACE
         throw(GraphBLASInsufficientSpaceException())
-    elseif info == GrB_INDEX_OUT_OF_BOUNDS
+    elseif info == 12   # INDEX_OUT_OF_BOUNDS
         throw(GraphBLASIndexOutOfBoundException())
-    elseif info == GrB_PANIC
+    elseif info == 13   # PANIC
         throw(GraphBLASPanicException())
     end
 end

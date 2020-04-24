@@ -69,14 +69,13 @@ function GrB_Semiring_new(monoid::GrB_Monoid, binary_op::GrB_BinaryOp)
     
     semiring_ptr = pointer_from_objref(semiring)
 
-    check(GrB_Info(
-            ccall(
-                    dlsym(graphblas_lib, "GrB_Semiring_new"),
-                    Cint,
-                    (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
-                    semiring_ptr, monoid.p, binary_op.p
-                )
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Semiring_new"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+            semiring_ptr, _gb_pointer(monoid), _gb_pointer(binary_op)
             )
-    )
+        )
     return semiring
 end

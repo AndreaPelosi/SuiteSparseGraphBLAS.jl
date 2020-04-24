@@ -71,13 +71,13 @@ function GrB_BinaryOp_new(fn::Function, ztype::GType{T}, xtype::GType{U}, ytype:
 
     binaryop_fn_C = @cfunction($binaryop_fn, Cvoid, (Ptr{T}, Ref{U}, Ref{V}))
 
-    check(GrB_Info(
-            ccall(
-                    dlsym(graphblas_lib, "GrB_BinaryOp_new"),
-                    Cint,
-                    (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
-                    op_ptr, binaryop_fn_C, ztype.gbtype, xtype.gbtype, ytype.gbtype
-                )
-            ))
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_BinaryOp_new"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+            op_ptr, binaryop_fn_C, _gb_pointer(ztype), _gb_pointer(xtype), _gb_pointer(ytype)
+            )
+        )
     return op
 end

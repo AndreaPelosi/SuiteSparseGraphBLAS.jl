@@ -7,7 +7,7 @@ With blocking mode, all operations finish before returning to the user applicati
 With non-blocking mode, operations can be left pending, and are computed only when needed.
 """
 function GrB_init(mode)
-    check(GrB_Info(ccall(dlsym(graphblas_lib, "GrB_init"), Cint, (Cint, ), mode)))
+    check(ccall(dlsym(graphblas_lib, "GrB_init"), Cint, (Cint, ), mode))
 end
 
 """
@@ -17,5 +17,5 @@ end
 `GrB_finalize` does not call `GrB_wait`; any pending computations are abandoned.
 """
 function GrB_finalize()
-    check(GrB_Info(ccall(dlsym(graphblas_lib, "GrB_finalize"), Cint, (), )))
+    check(ccall(dlsym(graphblas_lib, "GrB_finalize"), Cint, (), ))
 end
