@@ -80,4 +80,9 @@
     @test v[3] == 4
     @test v[end] == v[3]
 
+    # from_vector
+    v = SG.from_vector(Int32[1,2,3])
+    @test v.type == INT32
+    @test v[0] == 1 && v[1] == 2 && v[2] == 3
+
 end
