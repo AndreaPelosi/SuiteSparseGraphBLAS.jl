@@ -35,7 +35,9 @@ function _get(uop::UnaryOperator, types...)
     ztype, xtype = types
     index = findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.impl)
     if index == nothing
-        # TODO: try to create new unary op with specified domains
+        op = GrB_UnaryOp_new(uop.fun, ztype, xtype)
+        push!(uop.impl, op)
+        return op
     else
         return uop.impl[index]
     end
