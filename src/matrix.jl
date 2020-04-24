@@ -1,12 +1,5 @@
 import Base: getindex, size, copy, lastindex, setindex!, getindex, eltype
-
-mutable struct GBMatrix{T <: valid_types}
-    p::Ptr{Cvoid}
-    type::GType
-
-    GBMatrix{T}() where T = new(C_NULL, j2gtype(T))
-end
-
+    
 _gb_pointer(m::GBMatrix) = m.p
 
 function matrix_from_type(type::GType, nrows = 0, ncols = 0)
@@ -165,40 +158,6 @@ function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = nothing, mask =
     return out
 end
 
-function vxm(u::GBVector, A::GBMatrix; out = nothing, semiring = nothing, mask = nothing, accum = nothing, desc = nothing)
-    rowA, colA = size(A)
-    @assert size(u) == rowA
-
-    if out == nothing
-        out = vector_from_type(u.type, colA)
-    end
-
-    if semiring == nothing
-        # use default semiring
-    end
-    semiring_impl = _get(semiring, out.type, u.type, A.type)
-
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
-    # TODO: desc
-    desc = NULL
-    
-    check(
-        ccall(
-            dlsym(graphblas_lib, "GrB_vxm"),
-            Cint,
-            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
-            _gb_pointer(out), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(semiring_impl),
-            _gb_pointer(u), _gb_pointer(A), _gb_pointer(desc)
-            )
-        )
-    
-    return out
-
-end
-
 function mxv(A::GBMatrix, u::GBVector; out = nothing, semiring = nothing, mask = nothing, accum = nothing, desc = nothing)
     rowA, colA = size(A)
     @assert colA == size(u)
@@ -268,7 +227,7 @@ function emult(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask
 end
 
 function eadd(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
-    #operator: can be binaryop, monoid
+    #operator: can be binaryop, monoid and semiring
     @assert size(A) == size(B)
 
     if out == nothing

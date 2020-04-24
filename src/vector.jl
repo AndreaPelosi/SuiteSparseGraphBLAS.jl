@@ -1,12 +1,5 @@
 import Base: size, copy, lastindex, setindex!, getindex
 
-mutable struct GBVector{T <: valid_types}
-    p::Ptr{Cvoid}
-    type::GType
-    
-    GBVector{T}() where T = new(C_NULL, j2gtype(T))
-end
-
 _gb_pointer(m::GBVector) = m.p
 
 function vector_from_type(type, size = 0)
@@ -22,8 +15,8 @@ function vector_from_lists(I, V; size = nothing, type = NULL, combine = NULL)
         size = max(I...) + 1
     end
     if type == NULL
-        type = j2gtype(eltype(V[1]))
-    elseif type.jtype != eltype(V[1])
+        type = j2gtype(eltype(V))
+    elseif type.jtype != eltype(V)
         V = convert.(type.jtype, V)
     end
 
@@ -87,4 +80,162 @@ function getindex(v::GBVector, i::Integer)
     end
 end
 
+function emult(u::GBVector, v::GBVector; out=nothing, operator=nothing, mask=nothing, accum=nothing, desc=nothing)
+    # operator: can be binary op, monoid and semiring
+    if out == nothing
+        out = vector_from_type(u.type, size(u))
+    end
 
+    if operator == nothing
+        # default binary op
+    end
+    operator_impl = _get(operator, out.type, u.type, v.type)
+
+    # TODO: mask
+    mask = NULL
+    # TODO: accum
+    accum = NULL
+    # TODO: desc
+    desc = NULL
+
+    suffix = split(string(typeof(operator_impl)), "_")[end]
+
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_eWiseMult_Vector_" * suffix),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+            _gb_pointer(out), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(operator_impl),
+            _gb_pointer(u), _gb_pointer(v), _gb_pointer(desc)
+            )
+        )
+
+    return out
+end
+
+function eadd(u::GBVector, v::GBVector; out=nothing, operator=nothing, mask=nothing, accum=nothing, desc=nothing)
+    # operator: can be binary op, monoid and semiring
+    if out == nothing
+        out = vector_from_type(u.type, size(u))
+    end
+
+    if operator == nothing
+        # default binary op
+    end
+    operator_impl = _get(operator, out.type, u.type, v.type)
+
+    # TODO: mask
+    mask = NULL
+    # TODO: accum
+    accum = NULL
+    # TODO: desc
+    desc = NULL
+
+    suffix = split(string(typeof(operator_impl)), "_")[end]
+
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_eWiseAdd_Vector_" * suffix),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+            _gb_pointer(out), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(operator_impl),
+            _gb_pointer(u), _gb_pointer(v), _gb_pointer(desc)
+            )
+        )
+
+    return out
+end
+
+function vxm(u::GBVector, A::GBMatrix; out = nothing, semiring = nothing, mask = nothing, accum = nothing, desc = nothing)
+    rowA, colA = size(A)
+    @assert size(u) == rowA
+
+    if out == nothing
+        out = vector_from_type(u.type, colA)
+    end
+
+    if semiring == nothing
+        # use default semiring
+    end
+    semiring_impl = _get(semiring, out.type, u.type, A.type)
+
+    # TODO: mask
+    mask = NULL
+    # TODO: accum
+    accum = NULL
+    # TODO: desc
+    desc = NULL
+    
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_vxm"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+            _gb_pointer(out), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(semiring_impl),
+            _gb_pointer(u), _gb_pointer(A), _gb_pointer(desc)
+            )
+        )
+    
+    return out
+end
+
+function apply(u::GBVector; out=nothing, unaryop=nothing, mask=nothing, accum=nothing, desc=nothing)
+    if out == nothing
+        out = vector_from_type(u.type, size(u))
+    end
+
+    if unaryop == nothing
+        # default unaryop
+    end
+    unaryop_impl = _get(unaryop, out.type, u.type)
+
+    # TODO: mask
+    mask = NULL
+    # TODO: accum
+    accum = NULL
+    # TODO: desc
+    desc = NULL
+
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Vector_apply"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+            _gb_pointer(out), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(unaryop_impl),
+            _gb_pointer(u), _gb_pointer(desc)
+            )
+        )
+
+    return out
+end
+
+function apply!(u::GBVector; unaryop=nothing, mask=nothing, accum=nothing, desc=nothing)
+    return apply(u, out=u, unaryop=unaryop, mask=mask, accum=accum, desc=desc)
+end
+
+# TODO: select
+
+function reduce(u::GBVector{T}; monoid=nothing, accum=nothing, desc=nothing) where T
+    if monoid == nothing
+        # get default monoid
+    end
+    monoid_impl = _get(monoid, u.type)
+
+    # TODO: accum
+    accum = NULL
+    # TODO: desc
+    desc = NULL
+
+    scalar = Ref(T(0))
+
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Vector_reduce_" * suffix(T)),
+            Cint,
+            (Ptr{T}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+            scalar, _gb_pointer(accum), _gb_pointer(monoid_impl), _gb_pointer(u), _gb_pointer(desc)
+            )
+        )
+
+    return scalar[]
+end
