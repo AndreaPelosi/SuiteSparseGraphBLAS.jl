@@ -261,4 +261,43 @@
     out = SG.reduce(u, monoid=Monoids.LOR)
     @test out == true
 
+
+    # extract sub vector
+    u = SG.from_vector(Int64[1,2,3,4,5])
+    out = SG._extract(u, [0,4])
+    @test size(out) == 2
+    @test isa(out, SG.GBVector)
+    @test out[0] == 1
+    @test out[1] == 5
+
+
+    # getindex
+    u = SG.from_vector(Int64[1,2,3,4,5])
+    out = u[[0,4]]
+    @test size(out) == 2
+    @test isa(out, SG.GBVector)
+    @test out[0] == 1
+    @test out[1] == 5
+
+    u = SG.from_vector(Int64[1,2,3,4,5])
+    out = u[2:4]
+    @test size(out) == 3
+    @test isa(out, SG.GBVector)
+    @test out[0] == 3
+    @test out[1] == 4
+    @test out[2] == 5
+
+
+    # assign!
+    u = SG.from_vector(Int64[1,2,3,4,5])
+    v = SG.from_vector([10,11])
+    SG._assign!(u, v, [2,3])
+    @test u[0] == 1
+    @test u[1] == 2
+    @test u[2] == 10
+    @test u[3] == 11
+    @test u[4] == 5
+
+
+
 end
