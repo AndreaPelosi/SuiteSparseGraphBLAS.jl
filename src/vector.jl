@@ -34,7 +34,7 @@ end
 function from_vector(V)
     size = length(V)
     @assert size > 0
-    return vector_from_lists(collect(0:size-1), V, size=size)
+    return vector_from_lists(collect(0:size - 1), V, size = size)
 end
 
 function size(v::GBVector)
@@ -59,7 +59,7 @@ function clear!(v::GBVector)
     GrB_Vector_clear(v)
 end
 
-function lastindex(v::GBVector, d=nothing)
+function lastindex(v::GBVector, d = nothing)
     return size(v) - 1
 end
 
@@ -80,7 +80,10 @@ function getindex(v::GBVector, i::Integer)
     end
 end
 
-function emult(u::GBVector, v::GBVector; out=nothing, operator=nothing, mask=nothing, accum=nothing, desc=nothing)
+getindex(v::GBVector, i::Union{UnitRange,Vector}) = _extract(v, collect(i))
+getindex(v::GBVector, i::Colon) = copy(v)
+
+function emult(u::GBVector, v::GBVector; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
     # operator: can be binary op, monoid and semiring
     if out == nothing
         out = vector_from_type(u.type, size(u))
@@ -113,7 +116,7 @@ function emult(u::GBVector, v::GBVector; out=nothing, operator=nothing, mask=not
     return out
 end
 
-function eadd(u::GBVector, v::GBVector; out=nothing, operator=nothing, mask=nothing, accum=nothing, desc=nothing)
+function eadd(u::GBVector, v::GBVector; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
     # operator: can be binary op, monoid and semiring
     if out == nothing
         out = vector_from_type(u.type, size(u))
@@ -179,7 +182,7 @@ function vxm(u::GBVector, A::GBMatrix; out = nothing, semiring = nothing, mask =
     return out
 end
 
-function apply(u::GBVector; out=nothing, unaryop=nothing, mask=nothing, accum=nothing, desc=nothing)
+function apply(u::GBVector; out = nothing, unaryop = nothing, mask = nothing, accum = nothing, desc = nothing)
     if out == nothing
         out = vector_from_type(u.type, size(u))
     end
@@ -209,13 +212,13 @@ function apply(u::GBVector; out=nothing, unaryop=nothing, mask=nothing, accum=no
     return out
 end
 
-function apply!(u::GBVector; unaryop=nothing, mask=nothing, accum=nothing, desc=nothing)
-    return apply(u, out=u, unaryop=unaryop, mask=mask, accum=accum, desc=desc)
+function apply!(u::GBVector; unaryop = nothing, mask = nothing, accum = nothing, desc = nothing)
+    return apply(u, out = u, unaryop = unaryop, mask = mask, accum = accum, desc = desc)
 end
 
 # TODO: select
 
-function reduce(u::GBVector{T}; monoid=nothing, accum=nothing, desc=nothing) where T
+function reduce(u::GBVector{T}; monoid = nothing, accum = nothing, desc = nothing) where T
     if monoid == nothing
         # get default monoid
     end
@@ -238,4 +241,55 @@ function reduce(u::GBVector{T}; monoid=nothing, accum=nothing, desc=nothing) whe
         )
 
     return scalar[]
+end
+
+function _extract(u::GBVector, indices::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+    ni = length(indices)
+    @assert ni > 0
+
+    if out == nothing
+        out = vector_from_type(u.type, ni)
+    end
+
+    # TODO: mask
+    mask = NULL
+    # TODO: accum
+    accum = NULL
+    # TODO: desc
+    desc = NULL
+
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Vector_extract"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{I}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(out), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(u),
+            pointer(indices), ni, _gb_pointer(desc)
+            )
+        )
+
+    return out
+end
+
+function _assign!(u::GBVector, v::GBVector, indices::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+    ni = length(indices)
+    @assert ni > 0
+
+    # TODO: mask
+    mask = NULL
+    # TODO: accum
+    accum = NULL
+    # TODO: desc
+    desc = NULL
+    
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Vector_assign"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cintmax_t}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(u), _gb_pointer(mask), _gb_pointer(accum),
+            _gb_pointer(v), pointer(indices), ni, _gb_pointer(desc)
+            )
+        )
+        
 end
