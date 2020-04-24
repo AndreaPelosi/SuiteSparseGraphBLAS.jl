@@ -30,7 +30,7 @@ function vector_from_lists(I, V; size = nothing, type = NULL, combine = NULL)
     if combine == NULL
         combine = Binaryop.FIRST
     end
-    combine_bop = get_binaryop(combine, type, type, type)
+    combine_bop = _get(combine, type, type, type)
     
     v = vector_from_type(type, size)
     GrB_Vector_build(v, I, V, length(V), combine_bop)
