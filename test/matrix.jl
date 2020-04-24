@@ -441,6 +441,50 @@
     SG._assign_col!(A, u, 1, [0,1])
     @test A[0,0] == 1 && A[0,1] == 10
     @test A[1,0] == 3 && A[1,1] == 11
+
     
+    # get index - colon, unitrange, vector indices ...
+    # range of rows
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    u = A[0:1, 1]
+    @test isa(u, SG.GBVector)
+    @test u.type == INT64
+    @test size(u) == 2
+    @test u[0] == 2
+    @test u[1] == 4
+
+    A = SG.matrix_from_lists([0,0,1,1,2,2], [0,1,0,1,0,1], Int64[1,2,3,4,5,6])
+    u = A[1:2, 1]
+    @test isa(u, SG.GBVector)
+    @test u.type == INT64
+    @test size(u) == 2
+    @test u[0] == 4
+    @test u[1] == 6
+
+    # select all rows with colon operator
+    A = SG.matrix_from_lists([0,0,1,1,2,2], [0,1,0,1,0,1], Int64[1,2,3,4,5,6])
+    u = A[:, 0]
+    @test isa(u, SG.GBVector)
+    @test u.type == INT64
+    @test size(u) == 3
+    @test u[0] == 1 && u[1] == 3 && u[2] == 5
+
+    # select submatrix with row and col range
+    A = SG.matrix_from_lists([0,0,0,1,1,1,2,2,2], [0,1,2,0,1,2,0,1,2], Int64[1,2,3,4,5,6,7,8,9])
+    u = A[1:2, 1:2]
+    @test isa(u, SG.GBMatrix)
+    @test size(u) == (2,2)
+    @test u.type == INT64
+    @test u[0,0] == 5 && u[0,1] == 6
+    @test u[1,0] == 8 && u[1,1] == 9
+
+    # select submatrix with row and col vector indices
+    A = SG.matrix_from_lists([0,0,0,1,1,1,2,2,2], [0,1,2,0,1,2,0,1,2], Int64[1,2,3,4,5,6,7,8,9])
+    u = A[[0,2], [0,2]]
+    @test isa(u, SG.GBMatrix)
+    @test size(u) == (2,2)
+    @test u.type == INT64
+    @test u[0,0] == 1 && u[0,1] == 3
+    @test u[1,0] == 7 && u[1,1] == 9
 
 end
