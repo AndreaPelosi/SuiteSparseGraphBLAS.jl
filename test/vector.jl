@@ -85,4 +85,180 @@
     @test v.type == INT32
     @test v[0] == 1 && v[1] == 2 && v[2] == 3
 
+    
+    # emult
+
+    # binary op
+    u = SG.from_vector(Int64[1,2,3,4,5])
+    v = SG.from_vector(Int64[6,7,8,9,10])
+    out = SG.emult(u, v, operator=Binaryop.PLUS)
+    @test size(out) == 5
+    @test out.type == INT64
+    @test out[0] == 7
+    @test out[1] == 9
+    @test out[2] == 11
+    @test out[3] == 13
+    @test out[4] == 15
+
+    # monoid
+    u = SG.from_vector(Int64[1,2,3,4,5])
+    v = SG.from_vector(Int64[6,7,8,9,10])
+    out = SG.emult(u, v, operator=Monoids.PLUS)
+    @test size(out) == 5
+    @test out.type == INT64
+    @test out[0] == 7
+    @test out[1] == 9
+    @test out[2] == 11
+    @test out[3] == 13
+    @test out[4] == 15
+
+    # semiring
+    u = SG.from_vector(Int64[1,2,3,4,5])
+    v = SG.from_vector(Int64[6,7,8,9,10])
+    out = SG.emult(u, v, operator=Semirings.TIMES_PLUS)
+    @test size(out) == 5
+    @test out.type == INT64
+    @test out[0] == 7
+    @test out[1] == 9
+    @test out[2] == 11
+    @test out[3] == 13
+    @test out[4] == 15
+
+
+    # eadd
+
+    # binary op
+    u = SG.from_vector(Int64[1,2,3,4,5])
+    v = SG.from_vector(Int64[6,7,8,9,10])
+    out = SG.eadd(u, v, operator=Binaryop.TIMES)
+    @test size(out) == 5
+    @test out.type == INT64
+    @test out[0] == 6
+    @test out[1] == 14
+    @test out[2] == 24
+    @test out[3] == 36
+    @test out[4] == 50
+
+    # monoid
+    u = SG.from_vector(Int64[1,2,3,4,5])
+    v = SG.from_vector(Int64[6,7,8,9,10])
+    out = SG.eadd(u, v, operator=Monoids.TIMES)
+    @test size(out) == 5
+    @test out.type == INT64
+    @test out[0] == 6
+    @test out[1] == 14
+    @test out[2] == 24
+    @test out[3] == 36
+    @test out[4] == 50
+
+    # semiring
+    u = SG.from_vector(Int64[1,2,3,4,5])
+    v = SG.from_vector(Int64[6,7,8,9,10])
+    out = SG.eadd(u, v, operator=Semirings.TIMES_PLUS)
+    @test size(out) == 5
+    @test out.type == INT64
+    @test out[0] == 6
+    @test out[1] == 14
+    @test out[2] == 24
+    @test out[3] == 36
+    @test out[4] == 50
+
+
+    # vxm
+    v = SG.from_vector(Int64[1,2])
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], [1,2,3,4])
+    out = SG.vxm(v, A, semiring=Semirings.PLUS_TIMES)
+    @test size(out) == 2
+    @test out[0] == 7
+    @test out[1] == 10
+
+
+    # apply
+
+    v = SG.from_vector(Int64[-1,-2,3,-4])
+    out = SG.apply(v, unaryop=Unaryop.ABS)
+    @test out.type == INT64
+    @test size(v) == size(out)
+    @test out[0] == 1
+    @test out[1] == 2
+    @test out[2] == 3
+    @test out[3] == 4
+
+    dup = SG.unaryop(:DUP_TEST, a->a*2)
+    v = SG.from_vector(Int64[1,2,3,4])
+    out = SG.apply(v, unaryop=dup)
+    @test out.type == INT64
+    @test size(v) == size(out)
+    @test out[0] == 2
+    @test out[1] == 4
+    @test out[2] == 6
+    @test out[3] == 8
+
+    v = SG.from_vector(Int8[1,2,3,4])
+    out = SG.apply(v, unaryop=dup)
+    @test out.type == INT8
+    @test size(v) == size(out)
+    @test out[0] == 2
+    @test out[1] == 4
+    @test out[2] == 6
+    @test out[3] == 8
+
+    v = SG.from_vector(Float64[1,2,3,4])
+    out = SG.apply(v, unaryop=dup)
+    @test out.type == FP64
+    @test size(v) == size(out)
+    @test out[0] == Float64(2)
+    @test out[1] == Float64(4)
+    @test out[2] == Float64(6)
+    @test out[3] == Float64(8)
+
+
+
+    # apply!
+    
+    v = SG.from_vector(Int64[-1,-2,3,-4])
+    SG.apply!(v, unaryop=Unaryop.ABS)
+    @test v[0] == 1
+    @test v[1] == 2
+    @test v[2] == 3
+    @test v[3] == 4
+
+    v = SG.from_vector(Int64[1,2,3,4])
+    SG.apply!(v, unaryop=dup)
+    @test v[0] == 2
+    @test v[1] == 4
+    @test v[2] == 6
+    @test v[3] == 8
+
+    v = SG.from_vector(Int8[1,2,3,4])
+    SG.apply!(v, unaryop=dup)
+    @test v[0] == 2
+    @test v[1] == 4
+    @test v[2] == 6
+    @test v[3] == 8
+
+    v = SG.from_vector(Float64[1,2,3,4])
+    SG.apply!(v, unaryop=dup)
+    @test v[0] == Float64(2)
+    @test v[1] == Float64(4)
+    @test v[2] == Float64(6)
+    @test v[3] == Float64(8)
+
+
+    # reduce
+    u = SG.from_vector(Int64[1,2,3,4,5])
+    out = SG.reduce(u, monoid=Monoids.PLUS)
+    @test typeof(out) == Int64
+    @test out == 15
+
+    u = SG.from_vector(Int64[1,2,10,4,5])
+    out = SG.reduce(u, monoid=Monoids.MAX)
+    @test out == 10
+
+    u = SG.from_vector([true, false, true])
+    out = SG.reduce(u, monoid=Monoids.LAND)
+    @test out == false
+    out = SG.reduce(u, monoid=Monoids.LOR)
+    @test out == true
+
 end

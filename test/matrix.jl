@@ -98,14 +98,6 @@
     @test out[1,1] == 22
     @test out.type == INT64
 
-    # vxm
-    v = SG.from_vector(Int64[1,2])
-    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], [1,2,3,4])
-    out = SG.vxm(v, A, semiring=Semirings.PLUS_TIMES)
-    @test size(out) == 2
-    @test out[0] == 7
-    @test out[1] == 10
-
     # mxv
     A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
     v = SG.from_vector(Int64[1,2])
