@@ -67,6 +67,20 @@ mutable struct Semiring
     Semiring(monoid, binaryop) = new(monoid, binaryop, [])
 end
 
+mutable struct GBVector{T <: valid_types}
+    p::Ptr{Cvoid}
+    type::GType
+
+    GBVector{T}() where T = new(C_NULL, j2gtype(T))
+end
+
+mutable struct GBMatrix{T <: valid_types}
+    p::Ptr{Cvoid}
+    type::GType
+
+    GBMatrix{T}() where T = new(C_NULL, j2gtype(T))
+end
+
 const Unaryop = Dict{Symbol,UnaryOperator}()
 const Binaryop = Dict{Symbol,BinaryOperator}()
 const Monoids = Dict{Symbol,Monoid}()
