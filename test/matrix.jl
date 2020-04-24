@@ -307,6 +307,13 @@
     @test out[1,0] == 2
     @test out[1,1] == 4
 
+    # adjoint
+    A = SG.matrix_from_lists([0,0,1,1,2,2], [0,1,0,1,0,1], Int64[1,2,3,4,5,6])
+    tran = A'
+    @test size(tran) == (2,3)
+    @test tran[0,0] == 1 && tran[0,1] == 3 && tran[0,2] == 5
+    @test tran[1,0] == 2 && tran[1,1] == 4 && tran[1,2] == 6
+
     # rect matrix
     A = SG.matrix_from_lists([0,0,1,1,2,2], [0,1,0,1,0,1], Int64[1,2,3,4,5,6])
     out = SG.transpose(A)
@@ -399,6 +406,43 @@
     @test c4[0] == 4 && c4[1] == 6
 
 
+    # extract row
+    # square matrix
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    c1 = SG._extract_row(A, 0, [0,1])
+    @test isa(c1, SG.GBVector)
+    @test size(c1) == 2
+    @test c1[0] == 1 && c1[1] == 2
+
+    c2 = SG._extract_row(A, 1, [0,1])
+    @test isa(c2, SG.GBVector)
+    @test size(c2) == 2
+    @test c2[0] == 3 && c2[1] == 4
+
+    c3 = SG._extract_row(A, 0, [1])
+    @test isa(c3, SG.GBVector)
+    @test size(c3) == 1
+    @test c3[0] == 2
+
+    c4 = SG._extract_row(A, 1, [0])
+    @test isa(c4, SG.GBVector)
+    @test size(c4) == 1
+    @test c4[0] == 3
+
+    # rect matrix
+    A = SG.matrix_from_lists([0,0,1,1,2,2], [0,1,0,1,0,1], Int64[1,2,3,4,5,6])
+    c1 = SG._extract_row(A, 0, [0,1])
+    @test isa(c1, SG.GBVector)
+    @test size(c1) == 2
+    @test c1[0] == 1 && c1[1] == 2
+
+    c2 = SG._extract_row(A, 1, [0,1])
+    @test isa(c2, SG.GBVector)
+    @test size(c2) == 2
+    @test c2[0] == 3 && c2[1] == 4
+
+
+
     # extract matrix
     # 2 x 2 matrix
     A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
@@ -452,6 +496,23 @@
     @test size(u) == 2
     @test u[0] == 4
     @test u[1] == 6
+
+    #range of cols
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    u = A[0, 0:1]
+    @test isa(u, SG.GBVector)
+    @test u.type == INT64
+    @test size(u) == 2
+    @test u[0] == 1
+    @test u[1] == 2
+
+    A = SG.matrix_from_lists([0,0,1,1,2,2], [0,1,0,1,0,1], Int64[1,2,3,4,5,6])
+    u = A[1, 0:1]
+    @test isa(u, SG.GBVector)
+    @test u.type == INT64
+    @test size(u) == 2
+    @test u[0] == 3
+    @test u[1] == 4
 
     # select all rows with colon operator
     A = SG.matrix_from_lists([0,0,1,1,2,2], [0,1,0,1,0,1], Int64[1,2,3,4,5,6])
