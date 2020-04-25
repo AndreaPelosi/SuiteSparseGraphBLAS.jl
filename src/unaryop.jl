@@ -1,3 +1,5 @@
+import Base: show
+
 # create new unary op from function fun, called s
 function unaryop(s::Symbol, fun::Function; xtype::GType = NULL, ztype::GType = NULL)
     uop = get!(Unaryop, s, UnaryOperator(fun))
@@ -24,7 +26,7 @@ function load_builtin_unaryop()
         type = str2gtype(string(opn[end]))
         
         unaryop_name = Symbol(join(opn[2:end - 1]))
-        unaryop = get!(Unaryop, unaryop_name, UnaryOperator())
+        unaryop = get!(Unaryop, unaryop_name, UnaryOperator(string(unaryop_name)))
         push!(unaryop.impl, GrB_UnaryOp(op, type, type))
     end
     
@@ -69,3 +71,12 @@ function GrB_UnaryOp_new(fn::Function, ztype::GType{T}, xtype::GType{U}) where {
 
     return op
 end
+
+function __enter__(uop::UnaryOperator)
+    global g_operators
+    old = g_operators.unaryop
+    g_operators = Base.setindex(g_operators, uop, :unaryop)
+    return (unaryop=old,)
+end
+
+show(io::IO, uop::UnaryOperator) = print(io, "UnaryOperator($(uop.name))")

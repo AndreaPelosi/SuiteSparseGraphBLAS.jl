@@ -65,3 +65,21 @@ end
 function gbtype_from_jtype(T::DataType)
     return load_global("GrB_" * suffix(T))
 end
+
+function with(block, args...)
+    global g_operators
+
+    # change and store default operators
+    old_op = []
+    for op in args
+        push!(old_op, __enter__(op))
+    end
+
+    println(g_operators)
+    # execute code block
+    block()
+
+    # restore default operators
+    g_operators = merge(g_operators, old_op...)
+
+end 

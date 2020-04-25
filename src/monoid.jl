@@ -1,3 +1,5 @@
+import Base: show
+
 # create new monoid from binary operation and identity value
 function monoid(s::Symbol, bin_op::BinaryOperator, identity::T) where T <: valid_types
     domain = j2gtype(T)
@@ -29,7 +31,7 @@ function load_builtin_monoid()
             type = str2gtype(string(bpn[end-1]))
             
             monoid_name = Symbol(join(bpn[2:end-2], "_"))
-            monoid = get!(Monoids, monoid_name, Monoid())
+            monoid = get!(Monoids, monoid_name, Monoid(string(monoid_name)))
             push!(monoid.impl, GrB_Monoid(op, type))
         end
     end
@@ -67,3 +69,12 @@ function GrB_Monoid_new(binary_op::GrB_BinaryOp, identity::T) where T
         )
     return monoid
 end
+
+function __enter__(mon::Monoid)
+    global g_operators
+    old = g_operators.monoid
+    g_operators = Base.setindex(g_operators, mon, :monoid)
+    return (monoid=old,)
+end
+
+show(io::IO, mon::Monoid) = print(io, "Monoid($(mon.name))")

@@ -1,3 +1,5 @@
+import Base: show
+
 # create new unary op from function fun, called s
 function binaryop(s::Symbol, fun::Function; xtype::GType = NULL, ztype::GType = NULL, ytype::GType = NULL)
     bop = get!(Binaryop, s, BinaryOperator(fun))
@@ -18,7 +20,7 @@ function load_builtin_binaryop()
             type = str2gtype(string(bpn[end]))
             
             binaryop_name = Symbol(join(bpn[2:end - 1]))
-            binaryop = get!(Binaryop, binaryop_name, BinaryOperator())
+            binaryop = get!(Binaryop, binaryop_name, BinaryOperator(string(binaryop_name)))
             push!(binaryop.impl, GrB_BinaryOp(op, ztype == NULL ? type : ztype, type, type))
         end
     end
@@ -81,3 +83,12 @@ function GrB_BinaryOp_new(fn::Function, ztype::GType{T}, xtype::GType{U}, ytype:
         )
     return op
 end
+
+function __enter__(bop::BinaryOperator)
+    global g_operators
+    old = g_operators.binaryop
+    g_operators = Base.setindex(g_operators, bop, :binaryop)
+    return (binaryop=old,)
+end
+
+show(io::IO, bop::BinaryOperator) = print(io, "BinaryOperator($(bop.name))")

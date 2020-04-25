@@ -1,3 +1,5 @@
+import Base: show
+
 function semiring(s::Symbol, add::Monoid, mult::BinaryOperator)
     sem = get!(Semirings, s, Semiring(add, mult))
     return sem
@@ -31,7 +33,7 @@ function load_builtin_semiring()
             type = str2gtype(string(bpn[end]))
             
             semiring_name = Symbol(join(bpn[2:end-1], "_"))
-            semiring = get!(Semirings, semiring_name, Semiring())
+            semiring = get!(Semirings, semiring_name, Semiring(string(semiring_name)))
             push!(semiring.impl, GrB_Semiring(op, type, type, ztype == NULL ? type : ztype))
         end
     end
@@ -79,3 +81,12 @@ function GrB_Semiring_new(monoid::GrB_Monoid, binary_op::GrB_BinaryOp)
         )
     return semiring
 end
+
+function __enter__(sem::Semiring)
+    global g_operators
+    old = g_operators.semiring
+    g_operators = Base.setindex(g_operators, sem, :semiring)
+    return (semiring=old,)
+end
+
+show(io::IO, sem::Semiring) = print(io, "Semiring($(sem.name))")
