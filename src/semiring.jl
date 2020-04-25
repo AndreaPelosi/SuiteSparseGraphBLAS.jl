@@ -1,7 +1,7 @@
 import Base: show
 
 function semiring(s::Symbol, add::Monoid, mult::BinaryOperator)
-    sem = get!(Semirings, s, Semiring(add, mult))
+    sem = get!(Semirings, s, Semiring(add, mult, string(s)))
     return sem
 end
 

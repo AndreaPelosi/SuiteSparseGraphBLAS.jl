@@ -3,7 +3,7 @@ import Base: show
 # create new monoid from binary operation and identity value
 function monoid(s::Symbol, bin_op::BinaryOperator, identity::T) where T <: valid_types
     domain = j2gtype(T)
-    monoid = get!(Monoids, s, Monoid())
+    monoid = get!(Monoids, s, Monoid(string(s)))
     index = findfirst(mon -> mon.domain == domain, monoid.impl)
     if index == nothing
         # create a new monoid

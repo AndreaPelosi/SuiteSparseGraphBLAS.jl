@@ -2,7 +2,7 @@ import Base: show
 
 # create new unary op from function fun, called s
 function unaryop(s::Symbol, fun::Function; xtype::GType = NULL, ztype::GType = NULL)
-    uop = get!(Unaryop, s, UnaryOperator(fun))
+    uop = get!(Unaryop, s, UnaryOperator(fun, string(s)))
     if xtype != NULL && ztype != NULL
         if findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.impl) == nothing
             op = GrB_UnaryOp_new(fun, ztype, xtype)
