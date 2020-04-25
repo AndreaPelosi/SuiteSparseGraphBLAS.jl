@@ -90,7 +90,7 @@ function emult(u::GBVector, v::GBVector; out = nothing, operator = nothing, mask
     end
 
     if operator == nothing
-        # default binary op
+        operator = g_operators.binaryop
     end
     operator_impl = _get(operator, out.type, u.type, v.type)
 
@@ -123,7 +123,7 @@ function eadd(u::GBVector, v::GBVector; out = nothing, operator = nothing, mask 
     end
 
     if operator == nothing
-        # default binary op
+        operator = g_operators.binaryop
     end
     operator_impl = _get(operator, out.type, u.type, v.type)
 
@@ -158,7 +158,7 @@ function vxm(u::GBVector, A::GBMatrix; out = nothing, semiring = nothing, mask =
     end
 
     if semiring == nothing
-        # use default semiring
+        semiring = g_operators.semiring
     end
     semiring_impl = _get(semiring, out.type, u.type, A.type)
 
@@ -188,7 +188,7 @@ function apply(u::GBVector; out = nothing, unaryop = nothing, mask = nothing, ac
     end
 
     if unaryop == nothing
-        # default unaryop
+        unaryop = g_operators.unaryop
     end
     unaryop_impl = _get(unaryop, out.type, u.type)
 
@@ -220,7 +220,7 @@ end
 
 function reduce(u::GBVector{T}; monoid = nothing, accum = nothing, desc = nothing) where T
     if monoid == nothing
-        # get default monoid
+        monoid = g_operators.monoid
     end
     monoid_impl = _get(monoid, u.type)
 

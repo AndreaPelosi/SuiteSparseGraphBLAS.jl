@@ -134,7 +134,7 @@ function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = nothing, mask =
     end
 
     if semiring == nothing
-        # use default semiring
+        semiring = g_operators.semiring
     end
     semiring_impl = _get(semiring, out.type, A.type, B.type)
 
@@ -167,7 +167,7 @@ function mxv(A::GBMatrix, u::GBVector; out = nothing, semiring = nothing, mask =
     end
 
     if semiring == nothing
-        # default semiring
+        semiring = g_operators.semiring
     end
     semiring_impl = _get(semiring, out.type, A.type, u.type)
 
@@ -200,7 +200,7 @@ function emult(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask
     end
 
     if operator == nothing
-        # default binary op
+        operator = g_operators.binaryop
     end
     operator_impl = _get(operator, out.type, A.type, B.type)
 
@@ -235,7 +235,7 @@ function eadd(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask 
     end
 
     if operator == nothing
-        # default binary op
+        operator = g_operators.binaryop
     end
     operator_impl = _get(operator, out.type, A.type, B.type)
 
@@ -267,7 +267,7 @@ function apply(A::GBMatrix; out = nothing, unaryop = nothing, mask = nothing, ac
     end
 
     if unaryop == nothing
-        # default unaryop
+        unaryop = g_operators.unaryop
     end
     unaryop_impl = _get(unaryop, out.type, A.type)
 
@@ -304,7 +304,7 @@ function reduce_vector(A::GBMatrix; out = nothing, operator = nothing, mask = no
     end
 
     if operator == nothing
-        # default monoid
+        operator = g_operators.monoid
     end
     operator_impl = _get(operator, A.type, A.type, A.type)
 
@@ -332,7 +332,7 @@ end
 
 function reduce_scalar(A::GBMatrix{T}; monoid = nothing, accum = nothing, desc = nothing) where T
     if monoid == nothing
-        # default monoid
+        monoid = g_operators.monoid
     end
     monoid_impl = _get(monoid, A.type)
 
@@ -391,7 +391,7 @@ function kron(A::GBMatrix, B::GBMatrix; out = nothing, binaryop = nothing, mask 
     end
 
     if binaryop == nothing
-        # default binaryop
+        binaryop = g_operators.binaryop
     end
     binaryop_impl = _get(binaryop, out.type, A.type, B.type)
 
