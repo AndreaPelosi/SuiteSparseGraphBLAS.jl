@@ -1,4 +1,4 @@
-import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint
+import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix
     
 _gb_pointer(m::GBMatrix) = m.p
 
@@ -54,6 +54,19 @@ function identity(type, n)
     res = matrix_from_type(type, n, n)
     for i in 0:n-1
         res[i,i] = type.one
+    end
+    return res
+end
+
+function Matrix(A::GBMatrix{T}) where T
+    rows, cols = size(A)
+    res = Matrix{T}(undef, rows, cols)
+    i, j = 0, 0
+    
+    for i in 0:rows-1
+        for j in 0:cols-1
+            res[i+1, j+1] = A[i, j]
+        end
     end
     return res
 end
