@@ -576,6 +576,22 @@
     @test A[0,0] == 1 && A[0,1] == 10
     @test A[1,0] == 3 && A[1,1] == 11
 
+
+    # assign matrix
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[5,6,7,8])
+    SG._assign_matrix!(A, B, [0,1], [0,1])
+    @test A[0,0] == 5 && A[0,1] == 6
+    @test A[1,0] == 7 && A[1,1] == 8
+
+    A = SG.matrix_from_lists([0,0,0,1,1,1,2,2,2], [0,1,2,0,1,2,0,1,2], Int64[1,2,3,4,5,6,7,8,9])
+    B = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[10,11,12,13])
+    SG._assign_matrix!(A, B, [0,2], [1,2])
+    @test A[0,0] == 1 && A[0,1] == 10 && A[0,2] == 11
+    @test A[1,0] == 4 && A[1,1] == 5 && A[1,2] == 6
+    @test A[2,0] == 7 && A[2,1] == 12 && A[2,2] == 13
+
+
     
     # get index - colon, unitrange, vector indices ...
     # range of rows
@@ -637,5 +653,103 @@
     @test u.type == INT64
     @test u[0,0] == 1 && u[0,1] == 3
     @test u[1,0] == 7 && u[1,1] == 9
+
+
+
+    # setindex!
+    # index
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    A[0,0] = 10
+    @test A[0,0] == 10 && A[0,1] == 2 && A[1,0] == 3 && A[1,1] == 4
+    A[0,1] = 11
+    @test A[0,0] == 10 && A[0,1] == 11 && A[1,0] == 3 && A[1,1] == 4
+    A[1,0] = 12
+    @test A[0,0] == 10 && A[0,1] == 11 && A[1,0] == 12 && A[1,1] == 4
+    A[1,1] = 13
+    @test A[0,0] == 10 && A[0,1] == 11 && A[1,0] == 12 && A[1,1] == 13
+
+    # row colon, col index
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.from_vector([10, 11])
+    A[:,0] = B
+    @test A[0,0] == 10 && A[0,1] == 2 && A[1,0] == 11 && A[1,1] == 4
+
+    # row index, col colon
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.from_vector([10, 11])
+    A[1,:] = B
+    @test A[0,0] == 1 && A[0,1] == 2 && A[1,0] == 10 && A[1,1] == 11
+
+    # row list, col index
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.from_vector([10, 11])
+    A[[0,1],0] = B
+    @test A[0,0] == 10 && A[0,1] == 2 && A[1,0] == 11 && A[1,1] == 4
+
+    # row index, col list
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.from_vector([10, 11])
+    A[1,[0,1]] = B
+    @test A[0,0] == 1 && A[0,1] == 2 && A[1,0] == 10 && A[1,1] == 11
+
+    # row range, col index
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.from_vector([10, 11])
+    A[0:1,0] = B
+    @test A[0,0] == 10 && A[0,1] == 2 && A[1,0] == 11 && A[1,1] == 4
+
+    # row index, col range
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.from_vector([10, 11])
+    A[1,0:1] = B
+    @test A[0,0] == 1 && A[0,1] == 2 && A[1,0] == 10 && A[1,1] == 11
+
+    # row list, col list
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[10,20,30,40])
+    A[[0,1],[0,1]] = B
+    @test A[0,0] == 10 && A[0,1] == 20 && A[1,0] == 30 && A[1,1] == 40
+
+    # row list, col list
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[10,20,30,40])
+    A[[0,1],[0,1]] = B
+    @test A[0,0] == 10 && A[0,1] == 20 && A[1,0] == 30 && A[1,1] == 40
+
+    # row range, col range
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[10,20,30,40])
+    A[0:1,0:1] = B
+    @test A[0,0] == 10 && A[0,1] == 20 && A[1,0] == 30 && A[1,1] == 40
+
+    # row range, col colon
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[10,20,30,40])
+    A[0:1,:] = B
+    @test A[0,0] == 10 && A[0,1] == 20 && A[1,0] == 30 && A[1,1] == 40
+
+    # row colon, col range
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[10,20,30,40])
+    A[:,0:1] = B
+    @test A[0,0] == 10 && A[0,1] == 20 && A[1,0] == 30 && A[1,1] == 40
+
+    # row list, col colon
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[10,20,30,40])
+    A[[0,1],:] = B
+    @test A[0,0] == 10 && A[0,1] == 20 && A[1,0] == 30 && A[1,1] == 40
+
+    # row colon, col list
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[10,20,30,40])
+    A[:,[0,1]] = B
+    @test A[0,0] == 10 && A[0,1] == 20 && A[1,0] == 30 && A[1,1] == 40
+
+    # row colon, col colon
+    A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    B = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[10,20,30,40])
+    A[:,:] = B
+    @test A[0,0] == 10 && A[0,1] == 20 && A[1,0] == 30 && A[1,1] == 40
 
 end
