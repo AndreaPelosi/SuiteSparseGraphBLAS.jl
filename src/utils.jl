@@ -66,20 +66,32 @@ function gbtype_from_jtype(T::DataType)
     return load_global("GrB_" * suffix(T))
 end
 
-function with(block, args...)
-    global g_operators
+function __restore__(old_op)
+    global g_operators = merge(g_operators, old_op...)
+    nothing
+end
 
-    # change and store default operators
-    old_op = []
-    for op in args
-        push!(old_op, __enter__(op))
+macro with(env, block)
+    init = quote
+        # change and store default operators
+        old_op = []
+
+        if !($env isa Tuple)
+            operators = tuple($env)
+        else
+            operators = $env
+        end
+
+        for op in operators
+            Base.push!(old_op, __enter__(op))
+        end
+        
     end
 
-    println(g_operators)
-    # execute code block
-    block()
-
-    # restore default operators
-    g_operators = merge(g_operators, old_op...)
-
-end 
+    fin = quote
+        # restore default operators
+        __restore__(old_op)
+    end
+    
+    return :($init; :($$block); $fin)
+end
