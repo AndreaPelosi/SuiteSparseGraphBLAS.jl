@@ -34,11 +34,29 @@ function matrix_from_lists(I, J, V; nrows = nothing, ncols = nothing, type = NUL
 end
 
 function from_matrix(m)
-    # TODO
+    r, c = size(m)
+    res = matrix_from_type(j2gtype(eltype(m)), r, c)
+
+    i, j = 0, 0
+    for v in m
+        if !iszero(v)
+            res[i, j] = v
+        end
+        i += 1
+        if i >= r
+            i = 0
+            j += 1
+        end
+    end
+    return res
 end
 
-function identity(type, nrows)
-    # TODO
+function identity(type, n)
+    res = matrix_from_type(type, n, n)
+    for i in 0:n-1
+        res[i,i] = type.one
+    end
+    return res
 end
 
 function size(m::GBMatrix, dim = nothing)
