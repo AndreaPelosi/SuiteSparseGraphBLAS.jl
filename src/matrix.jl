@@ -61,7 +61,6 @@ end
 function Matrix(A::GBMatrix{T}) where T
     rows, cols = size(A)
     res = Matrix{T}(undef, rows, cols)
-    i, j = 0, 0
     
     for i in 0:rows-1
         for j in 0:cols-1
