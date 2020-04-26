@@ -85,17 +85,21 @@ function setindex!(m::GBMatrix{T}, value, i::Integer, j::Integer) where T
     GrB_Matrix_setElement(m, value, i, j)
 end
 
-function setindex!(m::GBMatrix{T}, value, i::Colon, j::Integer) where T
-    # TODO: with GBVector
-end
+setindex!(m::GBMatrix, value, i::Colon, j::Integer) = _assign_col!(m, value, j, _all_rows(m))
+setindex!(m::GBMatrix, value, i::Integer, j::Colon) = _assign_row!(m, value, i, _all_cols(m))
+setindex!(m::GBMatrix, value, i::Colon, j::Colon) = 
+    _assign_matrix!(m, value, _all_rows(m), _all_cols(m))
+setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Integer) = 
+    _assign_col!(m, value, j, collect(i))
+setindex!(m::GBMatrix, value, i::Integer, j::Union{UnitRange,Vector}) = 
+    _assign_row!(m, value, i, collect(j))
+setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Union{UnitRange,Vector}) =
+    _assign_matrix!(m, value, collect(i), collect(j))
+setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Colon) =
+    _assign_matrix!(m, value, collect(i), _all_cols(m))
+setindex!(m::GBMatrix, value, i::Colon, j::Union{UnitRange,Vector}) =
+    _assign_matrix!(m, value, _all_rows(m), collect(j))
 
-function setindex!(m::GBMatrix{T}, value, i::Integer, j::Colon) where T
-    # TODO: with GBVector
-end
-
-function setindex!(m::GBMatrix{T}, value, i::Colon, j::Colon) where T
-    # TODO: with GBVector
-end
 
 function getindex(m::GBMatrix, i::Integer, j::Integer)
     try
@@ -112,17 +116,17 @@ end
 getindex(m::GBMatrix, i::Colon, j::Integer) = _extract_col(m, j, _all_rows(m))
 getindex(m::GBMatrix, i::Integer, j::Colon) = _extract_row(m, i, _all_cols(m))
 getindex(m::GBMatrix, i::Colon, j::Colon) = copy(m)
-getindex(m::GBMatrix, i::Union{UnitRange, Vector}, j::Integer) = _extract_col(m, j, collect(i))
-getindex(m::GBMatrix, i::Integer, j::Union{UnitRange, Vector}) = _extract_row(m, i, collect(j))
-getindex(m::GBMatrix, i::Union{UnitRange, Vector}, j::Union{UnitRange, Vector}) =
+getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Integer) = _extract_col(m, j, collect(i))
+getindex(m::GBMatrix, i::Integer, j::Union{UnitRange,Vector}) = _extract_row(m, i, collect(j))
+getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Union{UnitRange,Vector}) =
     _extract_matrix(m, collect(i), collect(j))
-getindex(m::GBMatrix, i::Union{UnitRange, Vector}, j::Colon) =
+getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Colon) =
     _extract_matrix(m, collect(i), _all_cols(m))
-getindex(m::GBMatrix, i::Colon, j::Union{UnitRange, Vector}) =
+getindex(m::GBMatrix, i::Colon, j::Union{UnitRange,Vector}) =
     _extract_matrix(m, _all_rows(m), collect(j))
 
-_all_rows(m) = collect(0:size(m, 1)-1)
-_all_cols(m) = collect(0:size(m, 2)-1)
+_all_rows(m) = collect(0:size(m, 1) - 1)
+_all_cols(m) = collect(0:size(m, 2) - 1)
 
 function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = nothing, mask = nothing, accum = nothing, desc = nothing)
     rowA, colA = size(A)
@@ -192,7 +196,7 @@ function mxv(A::GBMatrix, u::GBVector; out = nothing, semiring = nothing, mask =
 end
 
 function emult(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
-    #operator: can be binaryop, monoid, semiring
+    # operator: can be binaryop, monoid, semiring
     @assert size(A) == size(B)
 
     if out == nothing
@@ -227,7 +231,7 @@ function emult(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask
 end
 
 function eadd(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
-    #operator: can be binaryop, monoid and semiring
+    # operator: can be binaryop, monoid and semiring
     @assert size(A) == size(B)
 
     if out == nothing
@@ -445,7 +449,7 @@ end
 
 function _extract_row(A::GBMatrix, row, cols::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
     # TODO: rewrite with transpose descriptor
-    return _extract_col(A', row, cols, out=out, mask=mask, accum=accum, desc=desc)
+    return _extract_col(A', row, cols, out = out, mask = mask, accum = accum, desc = desc)
 end
 
 function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
@@ -476,7 +480,7 @@ function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = no
     return out
 end
 
-function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64, Int64}
+function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
     # TODO: mask
     mask = NULL
     # TODO: accum
@@ -486,7 +490,7 @@ function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Vector{I}; mask = 
 
     check(
         ccall(
-            dlsym(graphblas_lib, "GrB_Row_assign"),
+            dlsym(graphblas_lib, "GxB_Row_subassign"),
             Cint,
             (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Ptr{Cuintmax_t}, Cuintmax_t, Ptr{Cvoid}),
             _gb_pointer(A), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(u),
@@ -496,7 +500,7 @@ function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Vector{I}; mask = 
     
 end
 
-function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64, Int64}
+function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
     # TODO: mask
     mask = NULL
     # TODO: accum
@@ -506,7 +510,7 @@ function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Vector{I}; mask = 
 
     check(
         ccall(
-            dlsym(graphblas_lib, "GrB_Col_assign"),
+            dlsym(graphblas_lib, "GxB_Col_subassign"),
             Cint,
             (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cuintmax_t}, Cuintmax_t, Cuintmax_t, Ptr{Cvoid}),
             _gb_pointer(A), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(u),
@@ -516,6 +520,24 @@ function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Vector{I}; mask = 
     
 end
 
-function _assign_matrix!()
-    # TODO: GrB_Matrix_assign
+function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Vector{I}, cols::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+    ni, nj = length(rows), length(cols)
+    @assert ni > 0 && nj > 0
+    
+    # TODO: mask
+    mask = NULL
+    # TODO: accum
+    accum = NULL
+    # TODO: desc
+    desc = NULL
+
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GxB_Matrix_subassign"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cuintmax_t}, Cuintmax_t, Ptr{Cuintmax_t}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(A), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(B),
+            pointer(rows), ni, pointer(cols), nj, _gb_pointer(desc)
+            )
+        )
 end
