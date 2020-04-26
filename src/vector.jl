@@ -68,6 +68,11 @@ function setindex!(v::GBVector{T}, value, i::Integer) where T
     GrB_Vector_setElement(v, value, i)
 end
 
+setindex!(v::GBVector, value, i::Union{UnitRange,Vector}) = _assign!(v, value, collect(i))
+setindex!(v::GBVector, value, i::Colon) = _assign!(v, value, _all_indices(v))
+
+_all_indices(v::GBVector) = collect(0:size(v)-1)
+
 function getindex(v::GBVector, i::Integer)
     try
         return GrB_Vector_extractElement(v, i)
