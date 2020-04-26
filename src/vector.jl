@@ -5,7 +5,7 @@ _gb_pointer(m::GBVector) = m.p
 function vector_from_type(type, size = 0)
     v = GBVector{type.jtype}()
     GrB_Vector_new(v, type, size)
-    # TODO: add finalizer
+    finalizer(_free, v)
     return v
 end
 
@@ -27,7 +27,6 @@ function vector_from_lists(I, V; size = nothing, type = NULL, combine = NULL)
     
     v = vector_from_type(type, size)
     GrB_Vector_build(v, I, V, length(V), combine_bop)
-    # TODO: add finalizer
     return v
 end
 
@@ -297,4 +296,15 @@ function _assign!(u::GBVector, v::GBVector, indices::Vector{I}; mask = nothing, 
             )
         )
         
+end
+
+function _free(v::GBVector)
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Vector_free"),
+            Cint,
+            (Ptr{Cvoid}, ),
+            pointer_from_objref(v)
+            )
+        )
 end

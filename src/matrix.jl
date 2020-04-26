@@ -5,7 +5,7 @@ _gb_pointer(m::GBMatrix) = m.p
 function matrix_from_type(type::GType, nrows = 0, ncols = 0)
     m = GBMatrix{type.jtype}()
     GrB_Matrix_new(m, type, nrows, ncols)
-    # TODO: add finalizer
+    finalizer(_free, m)
     return m
 end
 
@@ -29,7 +29,6 @@ function matrix_from_lists(I, J, V; nrows = nothing, ncols = nothing, type = NUL
     end
     combine_bop = _get(combine, type, type, type)
     GrB_Matrix_build(m, I, J, V, length(V), combine_bop)
-    # TODO: add finalizer
     return m
 end
 
@@ -556,6 +555,17 @@ function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Vector{I}, cols::Vector
             (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cuintmax_t}, Cuintmax_t, Ptr{Cuintmax_t}, Cuintmax_t, Ptr{Cvoid}),
             _gb_pointer(A), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(B),
             pointer(rows), ni, pointer(cols), nj, _gb_pointer(desc)
+            )
+        )
+end
+
+function _free(A::GBMatrix)
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Matrix_free"),
+            Cint,
+            (Ptr{Cvoid}, ),
+            pointer_from_objref(A)
             )
         )
 end
