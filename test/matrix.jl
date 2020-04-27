@@ -285,7 +285,7 @@
     @test out[1,0] == 3
     @test out[1,1] == 4
 
-    dup = SG.unaryop(:DUP_TEST, a->a * 2)
+    dup = SG.unaryop(a->a * 2, name=:DUP_TEST)
     A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
     out = SG.apply(A, unaryop = dup)
     @test out.type == INT64
@@ -335,7 +335,7 @@
     @test A[1,0] == 3
     @test A[1,1] == 4
 
-    dup = SG.unaryop(:DUP_TEST, a->a * 2)
+    dup = SG.unaryop(a->a * 2)
     A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
     SG.apply!(A, unaryop = dup)
     @test A.type == INT64

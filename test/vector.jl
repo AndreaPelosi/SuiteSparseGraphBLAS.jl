@@ -184,7 +184,7 @@
     @test out[2] == 3
     @test out[3] == 4
 
-    dup = SG.unaryop(:DUP_TEST, a->a * 2)
+    dup = SG.unaryop(a->a * 2)
     v = SG.from_vector(Int64[1,2,3,4])
     out = SG.apply(v, unaryop = dup)
     @test out.type == INT64
