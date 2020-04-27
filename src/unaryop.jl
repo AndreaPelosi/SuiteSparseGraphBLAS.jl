@@ -1,8 +1,18 @@
 import Base: show
 
 # create new unary op from function fun, called s
-function unaryop(s::Symbol, fun::Function; xtype::GType = NULL, ztype::GType = NULL)
-    uop = get!(Unaryop, s, UnaryOperator(fun, string(s)))
+function unaryop(fun::Function; xtype::GType = NULL, ztype::GType = NULL, name::Union{Symbol, Nothing} = nothing)
+    if name != nothing
+        if hasproperty(Unaryop, name)
+            uop = getproperty(Unaryop, name)
+        else
+            uop = UnaryOperator(fun, string(name))
+            @eval(Unaryop, $name = $uop)
+            @eval(Unaryop, export $name)
+        end
+    else
+        uop = UnaryOperator(fun, "$(string(name))_$(ztype.name)")
+    end
     if xtype != NULL && ztype != NULL
         if findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.impl) == nothing
             op = GrB_UnaryOp_new(fun, ztype, xtype)
@@ -26,7 +36,13 @@ function load_builtin_unaryop()
         type = str2gtype(string(opn[end]))
         
         unaryop_name = Symbol(join(opn[2:end - 1]))
-        unaryop = get!(Unaryop, unaryop_name, UnaryOperator(string(unaryop_name)))
+        if hasproperty(Unaryop, unaryop_name)
+            unaryop = getproperty(Unaryop, unaryop_name)
+        else
+            unaryop = UnaryOperator(string(unaryop_name))
+            @eval(Unaryop, $unaryop_name = $unaryop)
+            @eval(Unaryop, export $unaryop_name)
+        end
         push!(unaryop.impl, GrB_UnaryOp(op, type, type))
     end
     
@@ -80,3 +96,7 @@ function __enter__(uop::UnaryOperator)
 end
 
 show(io::IO, uop::UnaryOperator) = print(io, "UnaryOperator($(uop.name))")
+
+baremodule Unaryop
+    # to fill with binary ops built in and user defined
+end

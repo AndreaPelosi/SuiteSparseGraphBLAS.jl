@@ -1,8 +1,18 @@
 import Base: show
 
 # create new unary op from function fun, called s
-function binaryop(s::Symbol, fun::Function; xtype::GType = NULL, ztype::GType = NULL, ytype::GType = NULL)
-    bop = get!(Binaryop, s, BinaryOperator(fun, string(s)))
+function binaryop(fun::Function; xtype::GType = NULL, ztype::GType = NULL, ytype::GType = NULL, name::Union{Symbol, Nothing} = nothing)
+    if name != nothing
+        if hasproperty(Binaryop, name)
+            bop = getproperty(Binaryop, name)
+        else
+            bop = BinaryOperator(fun, string(name))
+            @eval(Binaryop, $name = $bop)
+            @eval(Binaryop, export $name)
+        end
+    else
+        bop = BinaryOperator(fun, "$(string(name))_$(ztype.name)")
+    end
     if xtype != NULL && ztype != NULL && ytype != NULL
         if findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, bop.impl) == nothing
             op = GrB_BinaryOp_new(fun, ztype, xtype, ytype)
@@ -14,14 +24,21 @@ end
 
 function load_builtin_binaryop()
 
-    function load(lst; ztype = NULL)
+    function load(lst; ztype = nothing)
         for op in lst
             bpn = split(op, "_")
             type = str2gtype(string(bpn[end]))
             
             binaryop_name = Symbol(join(bpn[2:end - 1]))
-            binaryop = get!(Binaryop, binaryop_name, BinaryOperator(string(binaryop_name)))
-            push!(binaryop.impl, GrB_BinaryOp(op, ztype == NULL ? type : ztype, type, type))
+            if hasproperty(Binaryop, binaryop_name)
+                binaryop = getproperty(Binaryop, binaryop_name)
+            else
+                binaryop = BinaryOperator(string(binaryop_name))
+                @eval(Binaryop, $binaryop_name = $binaryop)
+                @eval(Binaryop, export $binaryop_name)
+            end
+            
+            push!(binaryop.impl, GrB_BinaryOp(op, ztype == nothing ? type : ztype, type, type))
         end
     end
 
@@ -92,3 +109,7 @@ function __enter__(bop::BinaryOperator)
 end
 
 show(io::IO, bop::BinaryOperator) = print(io, "BinaryOperator($(bop.name))")
+
+baremodule Binaryop
+    # to fill with binary ops built in and user defined
+end

@@ -1,9 +1,19 @@
 import Base: show
 
 # create new monoid from binary operation and identity value
-function monoid(s::Symbol, bin_op::BinaryOperator, identity::T) where T <: valid_types
+function monoid(bin_op::BinaryOperator, identity::T; name::Union{Symbol, Nothing} = nothing) where T <: valid_types
     domain = j2gtype(T)
-    monoid = get!(Monoids, s, Monoid(string(s)))
+    if name != nothing
+        if hasproperty(Monoids, name)
+            monoid = getproperty(Monoids, name)
+        else
+            monoid = Monoid(string(name))
+            @eval(Monoids, $name = $monoid)
+            @eval(Monoids, export $name)
+        end
+    else
+        monoid = Monoids(string(name))
+    end
     index = findfirst(mon -> mon.domain == domain, monoid.impl)
     if index == nothing
         # create a new monoid
@@ -31,7 +41,13 @@ function load_builtin_monoid()
             type = str2gtype(string(bpn[end-1]))
             
             monoid_name = Symbol(join(bpn[2:end-2], "_"))
-            monoid = get!(Monoids, monoid_name, Monoid(string(monoid_name)))
+            if hasproperty(Monoids, monoid_name)
+                monoid = getproperty(Monoids, monoid_name)
+            else
+                monoid = Monoid(string(monoid_name))
+                @eval(Monoids, $monoid_name = $monoid)
+                @eval(Monoids, export $monoid_name)
+            end
             push!(monoid.impl, GrB_Monoid(op, type))
         end
     end
@@ -78,3 +94,7 @@ function __enter__(mon::Monoid)
 end
 
 show(io::IO, mon::Monoid) = print(io, "Monoid($(mon.name))")
+
+baremodule Monoids
+    # to fill with built in and user defined monoids
+end

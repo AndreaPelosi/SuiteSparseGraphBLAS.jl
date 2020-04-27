@@ -1,7 +1,17 @@
 import Base: show
 
-function semiring(s::Symbol, add::Monoid, mult::BinaryOperator)
-    sem = get!(Semirings, s, Semiring(add, mult, string(s)))
+function semiring(add::Monoid, mult::BinaryOperator; name::Union{Symbol, Nothing} = nothing)
+    if name != nothing
+        if hasproperty(Semirings, name)
+            sem = getproperty(Semirings, name)
+        else
+            sem = Semiring(add, mult, string(name))
+            @eval(Semirings, $name = $sem)
+            @eval(Semirings, export $name)
+        end
+    else
+        sem = Semiring(add, mult, string(name))
+    end
     return sem
 end
 
@@ -33,7 +43,15 @@ function load_builtin_semiring()
             type = str2gtype(string(bpn[end]))
             
             semiring_name = Symbol(join(bpn[2:end-1], "_"))
-            semiring = get!(Semirings, semiring_name, Semiring(string(semiring_name)))
+
+            if hasproperty(Semirings, semiring_name)
+                semiring = getproperty(Semirings, semiring_name)
+            else
+                semiring = Semiring(string(semiring_name))
+                @eval(Semirings, $semiring_name = $semiring)
+                @eval(Semirings, export $semiring_name)
+            end
+            
             push!(semiring.impl, GrB_Semiring(op, type, type, ztype == NULL ? type : ztype))
         end
     end
@@ -90,3 +108,7 @@ function __enter__(sem::Semiring)
 end
 
 show(io::IO, sem::Semiring) = print(io, "Semiring($(sem.name))")
+
+baremodule Semirings
+    # to fill with built in and user defined semirings
+end

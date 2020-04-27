@@ -92,26 +92,11 @@ mutable struct GBMatrix{T <: valid_types}
     GBMatrix{T}() where T = new(C_NULL, j2gtype(T))
 end
 
-function Base.getproperty(d::Dict{Symbol,T}, s::Symbol) where T <: Union{UnaryOperator,BinaryOperator,Monoid,Semiring,SelectOperator}
-    try
-        return getfield(d, s)
-    catch
-        return d[s]
-    end
-end
-
 _gb_pointer(op::GrB_UnaryOp) = op.p
 _gb_pointer(op::GrB_BinaryOp) = op.p
 _gb_pointer(op::GrB_Monoid) = op.p
 _gb_pointer(op::GrB_Semiring) = op.p
 _gb_pointer(op::SelectOperator) = op.p
-
-# global variables
-const Unaryop = Dict{Symbol,UnaryOperator}()
-const Binaryop = Dict{Symbol,BinaryOperator}()
-const Monoids = Dict{Symbol,Monoid}()
-const Semirings = Dict{Symbol,Semiring}()
-const Selectop = Dict{Symbol, SelectOperator}()
 
 # default methods operators
 g_operators = nothing
