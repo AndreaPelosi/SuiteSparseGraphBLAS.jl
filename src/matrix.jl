@@ -328,7 +328,28 @@ function apply!(A::GBMatrix; unaryop = nothing, mask = nothing, accum = nothing,
     return apply(A, out = A, unaryop = unaryop, mask = mask, accum = accum, desc = desc)
 end
 
-# TODO: select
+function select(A::GBMatrix, op::SelectOperator; out = nothing, thunk = NULL, mask = nothing, accum = nothing, desc = nothing)
+    if out == nothing
+        out = matrix_from_type(A.type, size(A)...)
+    end
+
+    # TODO
+    mask = NULL
+    accum = NULL
+    desk = NULL
+
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GxB_Matrix_select"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+            _gb_pointer(out), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(op),
+            _gb_pointer(A), _gb_pointer(thunk), _gb_pointer(desc)
+            )
+        )
+    
+    return out
+end
 
 function reduce_vector(A::GBMatrix; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
     # operator: can be binary op or monoid
