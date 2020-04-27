@@ -33,7 +33,14 @@ end
 function from_vector(V)
     size = length(V)
     @assert size > 0
-    return vector_from_lists(collect(0:size - 1), V, size = size)
+    res = vector_from_type(j2gtype(eltype(V)), size)
+    
+    for (i,v) in enumerate(V)
+        if !iszero(V[i])
+            res[i-1] = V[i]
+        end
+    end
+    return res
 end
 
 function size(v::GBVector)

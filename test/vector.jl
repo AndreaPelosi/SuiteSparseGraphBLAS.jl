@@ -257,7 +257,7 @@
 
     u = SG.from_vector([true, false, true])
     out = SG.reduce(u, monoid = Monoids.LAND)
-    @test out == false
+    @test out == true
     out = SG.reduce(u, monoid = Monoids.LOR)
     @test out == true
 
