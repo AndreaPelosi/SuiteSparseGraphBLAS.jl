@@ -12,10 +12,10 @@ end
 function matrix_from_lists(I, J, V; nrows = nothing, ncols = nothing, type = NULL, combine = NULL)
     @assert length(I) == length(J) == length(V)
     if nrows == nothing
-        nrows = max(I...) + 1
+        nrows = max(I...)
     end
     if ncols == nothing
-        ncols = max(J...) + 1
+        ncols = max(J...)
     end
     if type == NULL
         type = j2gtype(eltype(V))
@@ -28,6 +28,8 @@ function matrix_from_lists(I, J, V; nrows = nothing, ncols = nothing, type = NUL
         combine = Binaryop.FIRST
     end
     combine_bop = _get(combine, type, type, type)
+    map!(x -> x-1, I, I)
+    map!(x -> x-1, J, J)
     GrB_Matrix_build(m, I, J, V, length(V), combine_bop)
     return m
 end
@@ -36,14 +38,14 @@ function from_matrix(m)
     r, c = size(m)
     res = matrix_from_type(j2gtype(eltype(m)), r, c)
 
-    i, j = 0, 0
+    i, j = 1, 1
     for v in m
         if !iszero(v)
             res[i, j] = v
         end
         i += 1
-        if i >= r
-            i = 0
+        if i > r
+            i = 1
             j += 1
         end
     end
@@ -52,7 +54,7 @@ end
 
 function identity(type, n)
     res = matrix_from_type(type, n, n)
-    for i in 0:n-1
+    for i in 1:n
         res[i,i] = type.one
     end
     return res
@@ -62,9 +64,9 @@ function Matrix(A::GBMatrix{T}) where T
     rows, cols = size(A)
     res = Matrix{T}(undef, rows, cols)
     
-    for i in 0:rows-1
-        for j in 0:cols-1
-            res[i+1, j+1] = A[i, j]
+    for i in 1:rows
+        for j in 1:cols
+            res[i, j] = A[i, j]
         end
     end
     return res
@@ -106,33 +108,33 @@ function clear!(m::GBMatrix)
 end
 
 function lastindex(m::GBMatrix, d = nothing)
-    return size(m, d) .- 1
+    return size(m, d)
 end
 
 function setindex!(m::GBMatrix{T}, value, i::Integer, j::Integer) where T
     value = convert(T, value)
-    GrB_Matrix_setElement(m, value, i, j)
+    GrB_Matrix_setElement(m, value, i-1, j-1)
 end
 
-setindex!(m::GBMatrix, value, i::Colon, j::Integer) = _assign_col!(m, value, j, _all_rows(m))
-setindex!(m::GBMatrix, value, i::Integer, j::Colon) = _assign_row!(m, value, i, _all_cols(m))
+setindex!(m::GBMatrix, value, i::Colon, j::Integer) = _assign_col!(m, value, j-1, _all_rows(m))
+setindex!(m::GBMatrix, value, i::Integer, j::Colon) = _assign_row!(m, value, i-1, _all_cols(m))
 setindex!(m::GBMatrix, value, i::Colon, j::Colon) = 
     _assign_matrix!(m, value, _all_rows(m), _all_cols(m))
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Integer) = 
-    _assign_col!(m, value, j, collect(i))
+    _assign_col!(m, value, j-1, _zero_based_indexes(i))
 setindex!(m::GBMatrix, value, i::Integer, j::Union{UnitRange,Vector}) = 
-    _assign_row!(m, value, i, collect(j))
+    _assign_row!(m, value, i-1, _zero_based_indexes(j))
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Union{UnitRange,Vector}) =
-    _assign_matrix!(m, value, collect(i), collect(j))
+    _assign_matrix!(m, value, _zero_based_indexes(i), _zero_based_indexes(j))
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Colon) =
-    _assign_matrix!(m, value, collect(i), _all_cols(m))
+    _assign_matrix!(m, value, _zero_based_indexes(i), _all_cols(m))
 setindex!(m::GBMatrix, value, i::Colon, j::Union{UnitRange,Vector}) =
-    _assign_matrix!(m, value, _all_rows(m), collect(j))
+    _assign_matrix!(m, value, _all_rows(m), _zero_based_indexes(j))
 
 
 function getindex(m::GBMatrix, i::Integer, j::Integer)
     try
-        return GrB_Matrix_extractElement(m, i, j)
+        return GrB_Matrix_extractElement(m, i-1, j-1)
     catch e
         if e isa GraphBLASNoValueException
             return m.type.zero
@@ -142,20 +144,23 @@ function getindex(m::GBMatrix, i::Integer, j::Integer)
     end
 end
 
-getindex(m::GBMatrix, i::Colon, j::Integer) = _extract_col(m, j, _all_rows(m))
-getindex(m::GBMatrix, i::Integer, j::Colon) = _extract_row(m, i, _all_cols(m))
+getindex(m::GBMatrix, i::Colon, j::Integer) = _extract_col(m, j-1, _all_rows(m))
+getindex(m::GBMatrix, i::Integer, j::Colon) = _extract_row(m, i-1, _all_cols(m))
 getindex(m::GBMatrix, i::Colon, j::Colon) = copy(m)
-getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Integer) = _extract_col(m, j, collect(i))
-getindex(m::GBMatrix, i::Integer, j::Union{UnitRange,Vector}) = _extract_row(m, i, collect(j))
+getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Integer) = _extract_col(m, j-1, _zero_based_indexes(i))
+getindex(m::GBMatrix, i::Integer, j::Union{UnitRange,Vector}) = _extract_row(m, i-1, _zero_based_indexes(j))
 getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Union{UnitRange,Vector}) =
-    _extract_matrix(m, collect(i), collect(j))
+    _extract_matrix(m, _zero_based_indexes(i), _zero_based_indexes(j))
 getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Colon) =
-    _extract_matrix(m, collect(i), _all_cols(m))
+    _extract_matrix(m, _zero_based_indexes(i), _all_cols(m))
 getindex(m::GBMatrix, i::Colon, j::Union{UnitRange,Vector}) =
-    _extract_matrix(m, _all_rows(m), collect(j))
+    _extract_matrix(m, _all_rows(m), _zero_based_indexes(j))
 
-_all_rows(m) = collect(0:size(m, 1) - 1)
-_all_cols(m) = collect(0:size(m, 2) - 1)
+_all_rows(m) = collect(0:size(m, 1)-1)
+_all_cols(m) = collect(0:size(m, 2)-1)
+
+_zero_based_indexes(i::Vector) = map!(x -> x-1, i, i)
+_zero_based_indexes(i::UnitRange) = collect(i.-1)
 
 function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = nothing, mask = nothing, accum = nothing, desc = nothing)
     rowA, colA = size(A)

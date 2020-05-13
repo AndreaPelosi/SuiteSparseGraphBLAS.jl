@@ -12,7 +12,7 @@ end
 function vector_from_lists(I, V; size = nothing, type = NULL, combine = NULL)
     @assert length(I) == length(V) 
     if size == nothing
-        size = max(I...) + 1
+        size = max(I...)
     end
     if type == NULL
         type = j2gtype(eltype(V))
@@ -24,7 +24,7 @@ function vector_from_lists(I, V; size = nothing, type = NULL, combine = NULL)
         combine = Binaryop.FIRST
     end
     combine_bop = _get(combine, type, type, type)
-    
+    map!(x -> x-1, I, I)
     v = vector_from_type(type, size)
     GrB_Vector_build(v, I, V, length(V), combine_bop)
     return v
@@ -37,7 +37,7 @@ function from_vector(V)
     
     for (i,v) in enumerate(V)
         if !iszero(V[i])
-            res[i-1] = V[i]
+            res[i] = V[i]
         end
     end
     return res
@@ -66,22 +66,22 @@ function clear!(v::GBVector)
 end
 
 function lastindex(v::GBVector, d = nothing)
-    return size(v) - 1
+    return size(v)
 end
 
 function setindex!(v::GBVector{T}, value, i::Integer) where T
     value = convert(T, value)
-    GrB_Vector_setElement(v, value, i)
+    GrB_Vector_setElement(v, value, i-1)
 end
 
-setindex!(v::GBVector, value, i::Union{UnitRange,Vector}) = _assign!(v, value, collect(i))
+setindex!(v::GBVector, value, i::Union{UnitRange,Vector}) = _assign!(v, value, _zero_based_indexes(i))
 setindex!(v::GBVector, value, i::Colon) = _assign!(v, value, _all_indices(v))
 
 _all_indices(v::GBVector) = collect(0:size(v)-1)
 
 function getindex(v::GBVector, i::Integer)
     try
-        return GrB_Vector_extractElement(v, i)
+        return GrB_Vector_extractElement(v, i-1)
     catch e
         if e isa GraphBLASNoValueException
             return v.type.zero
@@ -91,8 +91,9 @@ function getindex(v::GBVector, i::Integer)
     end
 end
 
-getindex(v::GBVector, i::Union{UnitRange,Vector}) = _extract(v, collect(i))
+getindex(v::GBVector, i::Union{UnitRange,Vector}) = _extract(v, _zero_based_indexes(i))
 getindex(v::GBVector, i::Colon) = copy(v)
+
 
 function emult(u::GBVector, v::GBVector; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
     # operator: can be binary op, monoid and semiring
