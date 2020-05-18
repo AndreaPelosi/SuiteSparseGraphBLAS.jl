@@ -551,7 +551,7 @@ function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::GSpecial; out = not
     return __extract_matrix__(A, pointer(rows), cols.p, length(rows), size(A, 2), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I}, GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
     # TODO: mask
     mask = NULL
     # TODO: accum
@@ -571,7 +571,7 @@ function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I}, G
     nothing
 end
 
-function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I}, GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
     # TODO: mask
     mask = NULL
     # TODO: accum
@@ -591,7 +591,7 @@ function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I}, G
     nothing
 end
 
-function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I}, GSpecial}, cols::Union{Vector{I}, GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I},GSpecial}, cols::Union{Vector{I},GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
     # TODO: mask
     mask = NULL
     # TODO: accum
