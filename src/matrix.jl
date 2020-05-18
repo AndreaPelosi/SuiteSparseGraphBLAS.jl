@@ -28,8 +28,8 @@ function matrix_from_lists(I, J, V; nrows = nothing, ncols = nothing, type = NUL
         combine = Binaryop.FIRST
     end
     combine_bop = _get(combine, type, type, type)
-    map!(x -> x-1, I, I)
-    map!(x -> x-1, J, J)
+    map!(x->x - 1, I, I)
+    map!(x->x - 1, J, J)
     GrB_Matrix_build(m, I, J, V, length(V), combine_bop)
     return m
 end
@@ -113,17 +113,17 @@ end
 
 function setindex!(m::GBMatrix{T}, value, i::Integer, j::Integer) where T
     value = convert(T, value)
-    GrB_Matrix_setElement(m, value, i-1, j-1)
+    GrB_Matrix_setElement(m, value, i - 1, j - 1)
 end
 
-setindex!(m::GBMatrix, value, i::Colon, j::Integer) = _assign_col!(m, value, j-1, _all_rows(m))
-setindex!(m::GBMatrix, value, i::Integer, j::Colon) = _assign_row!(m, value, i-1, _all_cols(m))
+setindex!(m::GBMatrix, value, i::Colon, j::Integer) = _assign_col!(m, value, j - 1, _all_rows(m))
+setindex!(m::GBMatrix, value, i::Integer, j::Colon) = _assign_row!(m, value, i - 1, _all_cols(m))
 setindex!(m::GBMatrix, value, i::Colon, j::Colon) = 
     _assign_matrix!(m, value, _all_rows(m), _all_cols(m))
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Integer) = 
-    _assign_col!(m, value, j-1, _zero_based_indexes(i))
+    _assign_col!(m, value, j - 1, _zero_based_indexes(i))
 setindex!(m::GBMatrix, value, i::Integer, j::Union{UnitRange,Vector}) = 
-    _assign_row!(m, value, i-1, _zero_based_indexes(j))
+    _assign_row!(m, value, i - 1, _zero_based_indexes(j))
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Union{UnitRange,Vector}) =
     _assign_matrix!(m, value, _zero_based_indexes(i), _zero_based_indexes(j))
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Colon) =
@@ -134,7 +134,7 @@ setindex!(m::GBMatrix, value, i::Colon, j::Union{UnitRange,Vector}) =
 
 function getindex(m::GBMatrix, i::Integer, j::Integer)
     try
-        return GrB_Matrix_extractElement(m, i-1, j-1)
+        return GrB_Matrix_extractElement(m, i - 1, j - 1)
     catch e
         if e isa GraphBLASNoValueException
             return m.type.zero
@@ -144,23 +144,23 @@ function getindex(m::GBMatrix, i::Integer, j::Integer)
     end
 end
 
-getindex(m::GBMatrix, i::Colon, j::Integer) = _extract_col(m, j-1, _all_rows(m))
-getindex(m::GBMatrix, i::Integer, j::Colon) = _extract_row(m, i-1, _all_cols(m))
+getindex(m::GBMatrix, i::Colon, j::Integer) = _extract_col(m, j - 1, GrB_ALL)
+getindex(m::GBMatrix, i::Integer, j::Colon) = _extract_row(m, i - 1, GrB_ALL)
 getindex(m::GBMatrix, i::Colon, j::Colon) = copy(m)
-getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Integer) = _extract_col(m, j-1, _zero_based_indexes(i))
-getindex(m::GBMatrix, i::Integer, j::Union{UnitRange,Vector}) = _extract_row(m, i-1, _zero_based_indexes(j))
+getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Integer) = _extract_col(m, j - 1, _zero_based_indexes(i))
+getindex(m::GBMatrix, i::Integer, j::Union{UnitRange,Vector}) = _extract_row(m, i - 1, _zero_based_indexes(j))
 getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Union{UnitRange,Vector}) =
     _extract_matrix(m, _zero_based_indexes(i), _zero_based_indexes(j))
 getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Colon) =
-    _extract_matrix(m, _zero_based_indexes(i), _all_cols(m))
+    _extract_matrix(m, _zero_based_indexes(i), GrB_ALL)
 getindex(m::GBMatrix, i::Colon, j::Union{UnitRange,Vector}) =
-    _extract_matrix(m, _all_rows(m), _zero_based_indexes(j))
+    _extract_matrix(m, GrB_ALL, _zero_based_indexes(j))
 
-_all_rows(m) = collect(0:size(m, 1)-1)
-_all_cols(m) = collect(0:size(m, 2)-1)
+_all_rows(m) = collect(0:size(m, 1) - 1)
+_all_cols(m) = collect(0:size(m, 2) - 1)
 
-_zero_based_indexes(i::Vector) = map!(x -> x-1, i, i)
-_zero_based_indexes(i::UnitRange) = collect(i.-1)
+_zero_based_indexes(i::Vector) = map!(x->x - 1, i, i)
+_zero_based_indexes(i::UnitRange) = collect(i .- 1)
 
 function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = nothing, mask = nothing, accum = nothing, desc = nothing)
     rowA, colA = size(A)
@@ -474,8 +474,8 @@ function kron(A::GBMatrix, B::GBMatrix; out = nothing, binaryop = nothing, mask 
     return out
 end
 
-function _extract_col(A::GBMatrix, col, rows::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    ni = length(rows)
+
+function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = nothing, mask = nothing, accum = nothing, desc = nothing)
     @assert ni > 0
 
     if out == nothing
@@ -493,13 +493,21 @@ function _extract_col(A::GBMatrix, col, rows::Vector{I}; out = nothing, mask = n
         ccall(
             dlsym(graphblas_lib, "GrB_Col_extract"),
             Cint,
-            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{I}, Cuintmax_t, Cuintmax_t, Ptr{Cvoid}),
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Cuintmax_t, Ptr{Cvoid}),
             _gb_pointer(out), _gb_pointer(mask), _gb_pointer(accum),
-            _gb_pointer(A), pointer(rows), ni, col, _gb_pointer(desc)
+            _gb_pointer(A), pointer_rows, ni, col, _gb_pointer(desc)
             )
         )
     
     return out
+end
+
+function _extract_col(A::GBMatrix, col, rows::GSpecial; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+    return __extract_col__(A, col, rows.p, size(A, 1), out=out, mask = mask, accum=accum, desc=desc)
+end
+
+function _extract_col(A::GBMatrix, col, rows::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+    return __extract_col__(A, col, pointer(rows), length(rows), out=out, mask=mask, accum=accum, desc=desc)
 end
 
 function _extract_row(A::GBMatrix, row, cols::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
@@ -507,8 +515,7 @@ function _extract_row(A::GBMatrix, row, cols::Vector{I}; out = nothing, mask = n
     return _extract_col(A', row, cols, out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    ni, nj = length(rows), length(cols)
+function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; out = nothing, mask = nothing, accum = nothing, desc = nothing)
     @assert ni > 0 && nj > 0
 
     if out == nothing
@@ -526,13 +533,25 @@ function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = no
         ccall(
             dlsym(graphblas_lib, "GrB_Matrix_extract"),
             Cint,
-            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{I}, Cuintmax_t, Ptr{I}, Cuintmax_t, Ptr{Cvoid}),
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}),
             _gb_pointer(out), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(A),
-            pointer(rows), ni, pointer(cols), nj, _gb_pointer(desc)
+            pointer_rows, ni, pointer_cols, nj, _gb_pointer(desc)
             )
         )
     
     return out
+end
+
+function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+    return __extract_matrix__(A, pointer(rows), pointer(cols), length(rows), length(cols), out=out, mask=mask, accum=accum, desc=desc)
+end
+
+function _extract_matrix(A::GBMatrix, rows::GSpecial, cols::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+    return __extract_matrix__(A, rows.p, pointer(cols), size(A, 1), length(cols), out=out, mask=mask, accum=accum, desc=desc)
+end
+
+function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::GSpecial; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+    return __extract_matrix__(A, pointer(rows), cols.p, length(rows), size(A, 2), out=out, mask=mask, accum=accum, desc=desc)
 end
 
 function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
@@ -602,7 +621,7 @@ function _free(A::GBMatrix)
         ccall(
             dlsym(graphblas_lib, "GrB_Matrix_free"),
             Cint,
-            (Ptr{Cvoid}, ),
+            (Ptr{Cvoid},),
             pointer_from_objref(A)
             )
         )
