@@ -551,7 +551,7 @@ function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::GSpecial; out = not
     return __extract_matrix__(A, pointer(rows), cols.p, length(rows), size(A, 2), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function __assign_row!__(A::GBMatrix, u::GBVector, row::I, pointer_cols, n_cols; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I}, GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
     # TODO: mask
     mask = NULL
     # TODO: accum
@@ -563,23 +563,15 @@ function __assign_row!__(A::GBMatrix, u::GBVector, row::I, pointer_cols, n_cols;
         ccall(
             dlsym(graphblas_lib, "GxB_Row_subassign"),
             Cint,
-            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Ptr{Cuintmax_t}, Cuintmax_t, Ptr{Cvoid}),
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}),
             _gb_pointer(A), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(u),
-            row, pointer_cols, n_cols, _gb_pointer(desc)
+            row, pointer(cols), length(cols), _gb_pointer(desc)
             )
         )
     nothing
 end
 
-function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    __assign_row!__(A, u, row, pointer(cols), length(cols), mask = mask, accum = accum, desc = desc)    
-end
-
-function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::GSpecial; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    __assign_row!__(A, u, row, cols.p, 0, mask = mask, accum = accum, desc = desc)    
-end
-
-function __assign_col!__(A::GBMatrix, u::GBVector, col::I, pointer_rows, n_rows; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I}, GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
     # TODO: mask
     mask = NULL
     # TODO: accum
@@ -593,21 +585,13 @@ function __assign_col!__(A::GBMatrix, u::GBVector, col::I, pointer_rows, n_rows;
             Cint,
             (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cuintmax_t}, Cuintmax_t, Cuintmax_t, Ptr{Cvoid}),
             _gb_pointer(A), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(u),
-            pointer_rows, n_rows, col, _gb_pointer(desc)
+            pointer(rows), length(rows), col, _gb_pointer(desc)
             )
         )
     nothing
 end
 
-function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    __assign_col!__(A, u, col, pointer(rows), length(rows), mask = mask, accum = accum, desc = desc)
-end
-
-function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::GSpecial; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    __assign_col!__(A, u, col, rows.p, 0, mask = mask, accum = accum, desc = desc)
-end
-
-function __assign_matrix!__(A::GBMatrix, B::GBMatrix, pointer_rows, pointer_cols, n_rows, n_cols; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64} 
+function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I}, GSpecial}, cols::Union{Vector{I}, GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
     # TODO: mask
     mask = NULL
     # TODO: accum
@@ -621,26 +605,10 @@ function __assign_matrix!__(A::GBMatrix, B::GBMatrix, pointer_rows, pointer_cols
             Cint,
             (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}),
             _gb_pointer(A), _gb_pointer(mask), _gb_pointer(accum), _gb_pointer(B),
-            pointer_rows, n_rows, pointer_cols, n_cols, _gb_pointer(desc)
+            pointer(rows), length(rows), pointer(cols), length(cols), _gb_pointer(desc)
             )
         )
     nothing
-end
-
-function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Vector{I}, cols::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    __assign_matrix!__(A, B, pointer(rows), pointer(cols), length(rows), length(cols), mask = mask, accum = accum, desc = desc)
-end
-
-function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::GSpecial, cols::Vector{I}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    __assign_matrix!__(A, B, rows.p, pointer(cols), 0, length(cols), mask = mask, accum = accum, desc = desc)
-end
-
-function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Vector{I}, cols::GSpecial; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    __assign_matrix!__(A, B, pointer(rows), cols.p, length(rows), 0, mask = mask, accum = accum, desc = desc)
-end
-
-function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::GSpecial, cols::GSpecial; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    __assign_matrix!__(A, B, rows.p, cols.p, 0, 0, mask = mask, accum = accum, desc = desc)
 end
 
 function _free(A::GBMatrix)

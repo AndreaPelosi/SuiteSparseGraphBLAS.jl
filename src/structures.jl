@@ -1,3 +1,5 @@
+import Base: pointer, length
+
 mutable struct GrB_UnaryOp
     p::Ptr{Cvoid}
     ztype::GType
@@ -104,3 +106,6 @@ g_operators = nothing
 mutable struct GSpecial
     p::Ptr{Cvoid}
 end
+
+pointer(t::GSpecial) = t.p
+length(t::GSpecial) = 0     # dummy length
