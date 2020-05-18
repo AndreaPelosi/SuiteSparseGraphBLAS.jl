@@ -11,20 +11,20 @@ end
 
 function matrix_from_lists(I, J, V; nrows = nothing, ncols = nothing, type = NULL, combine = NULL)
     @assert length(I) == length(J) == length(V)
-    if nrows == nothing
+    if nrows === nothing
         nrows = max(I...)
     end
-    if ncols == nothing
+    if ncols === nothing
         ncols = max(J...)
     end
-    if type == NULL
+    if type === NULL
         type = j2gtype(eltype(V))
     elseif type.jtype != eltype(V)
         V = convert.(type.jtype, V)
     end
     m = matrix_from_type(type, nrows, ncols)
 
-    if combine == NULL
+    if combine === NULL
         combine = Binaryop.FIRST
     end
     combine_bop = _get(combine, type, type, type)
@@ -73,7 +73,7 @@ function Matrix(A::GBMatrix{T}) where T
 end
 
 function size(m::GBMatrix, dim = nothing)
-    if dim == nothing
+    if dim === nothing
         return (Int64(GrB_Matrix_nrows(m)), Int64(GrB_Matrix_ncols(m)))
     elseif dim == 1
         return Int64(GrB_Matrix_nrows(m))
@@ -159,26 +159,25 @@ getindex(m::GBMatrix, i::Colon, j::Union{UnitRange,Vector}) =
 _zero_based_indexes(i::Vector) = map!(x->x - 1, i, i)
 _zero_based_indexes(i::UnitRange) = collect(i .- 1)
 
-function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = nothing, mask = nothing, accum = nothing, desc = nothing)
+function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = NULL, mask = NULL, accum = NULL, desc = NULL)
     rowA, colA = size(A)
     rowB, colB = size(B)
     @assert colA == rowB
 
-    if out == nothing
+    if out === nothing
         out = matrix_from_type(A.type, rowA, colB)
     end
 
-    if semiring == nothing
+    if semiring === NULL
         semiring = g_operators.semiring
     end
     semiring_impl = _get(semiring, out.type, A.type, B.type)
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
     # TODO: desc
-    desc = NULL
+
+    if accum !== NULL
+        accum = _get(accum)
+    end
 
     check(
         ccall(
@@ -193,25 +192,24 @@ function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = nothing, mask =
     return out
 end
 
-function mxv(A::GBMatrix, u::GBVector; out = nothing, semiring = nothing, mask = nothing, accum = nothing, desc = nothing)
+function mxv(A::GBMatrix, u::GBVector; out = nothing, semiring = NULL, mask = NULL, accum = NULL, desc = NULL)
     rowA, colA = size(A)
     @assert colA == size(u)
 
-    if out == nothing
+    if out === nothing
         out = vector_from_type(A.type, rowA)
     end
 
-    if semiring == nothing
+    if semiring === NULL
         semiring = g_operators.semiring
     end
     semiring_impl = _get(semiring, out.type, A.type, u.type)
+    
+    if accum !== NULL
+        accum = _get(accum)
+    end
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
     # TODO: desc
-    desc = NULL
 
     check(
         ccall(
@@ -226,25 +224,24 @@ function mxv(A::GBMatrix, u::GBVector; out = nothing, semiring = nothing, mask =
     return out
 end
 
-function emult(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
+function emult(A::GBMatrix, B::GBMatrix; out = nothing, operator = NULL, mask = NULL, accum = NULL, desc = NULL)
     # operator: can be binaryop, monoid, semiring
     @assert size(A) == size(B)
 
-    if out == nothing
+    if out === nothing
         out = matrix_from_type(A.type, size(A)...)
     end
 
-    if operator == nothing
+    if operator === NULL
         operator = g_operators.binaryop
     end
     operator_impl = _get(operator, out.type, A.type, B.type)
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+    if accum !== NULL
+        accum = _get(accum)
+    end
+
     # TODO: desc
-    desc = NULL
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
@@ -261,25 +258,24 @@ function emult(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask
     return out
 end
 
-function eadd(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
+function eadd(A::GBMatrix, B::GBMatrix; out = nothing, operator = NULL, mask = NULL, accum = NULL, desc = NULL)
     # operator: can be binaryop, monoid and semiring
     @assert size(A) == size(B)
 
-    if out == nothing
+    if out === nothing
         out = matrix_from_type(A.type, size(A)...)
     end
 
-    if operator == nothing
+    if operator === NULL
         operator = g_operators.binaryop
     end
     operator_impl = _get(operator, out.type, A.type, B.type)
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+    if accum !== NULL
+        accum = _get(accum)
+    end
+    
     # TODO: desc
-    desc = NULL
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
@@ -296,22 +292,21 @@ function eadd(A::GBMatrix, B::GBMatrix; out = nothing, operator = nothing, mask 
     return out
 end
 
-function apply(A::GBMatrix; out = nothing, unaryop = nothing, mask = nothing, accum = nothing, desc = nothing)
-    if out == nothing
+function apply(A::GBMatrix; out = nothing, unaryop = NULL, mask = NULL, accum = NULL, desc = NULL)
+    if out === nothing
         out = matrix_from_type(A.type, size(A)...)
     end
 
-    if unaryop == nothing
+    if unaryop === NULL
         unaryop = g_operators.unaryop
     end
     unaryop_impl = _get(unaryop, out.type, A.type)
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+    if accum !== NULL
+        accum = _get(accum)
+    end
+
     # TODO: desc
-    desc = NULL
 
     check(
         ccall(
@@ -326,20 +321,21 @@ function apply(A::GBMatrix; out = nothing, unaryop = nothing, mask = nothing, ac
     return out
 end
 
-function apply!(A::GBMatrix; unaryop = nothing, mask = nothing, accum = nothing, desc = nothing)
+function apply!(A::GBMatrix; unaryop = NULL, mask = NULL, accum = NULL, desc = NULL)
     return apply(A, out = A, unaryop = unaryop, mask = mask, accum = accum, desc = desc)
 end
 
-function select(A::GBMatrix, op::SelectOperator; out = nothing, thunk = NULL, mask = nothing, accum = nothing, desc = nothing)
-    if out == nothing
+function select(A::GBMatrix, op::SelectOperator; out = nothing, thunk = NULL, mask = NULL, accum = NULL, desc = NULL)
+    if out === nothing
         out = matrix_from_type(A.type, size(A)...)
     end
 
-    # TODO
-    mask = NULL
-    accum = NULL
-    desk = NULL
+    # TODO: desc
 
+    if accum === NULL
+        accum = _get(accum)
+    end
+    
     check(
         ccall(
             dlsym(graphblas_lib, "GxB_Matrix_select"),
@@ -353,23 +349,22 @@ function select(A::GBMatrix, op::SelectOperator; out = nothing, thunk = NULL, ma
     return out
 end
 
-function reduce_vector(A::GBMatrix; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
+function reduce_vector(A::GBMatrix; out = nothing, operator = NULL, mask = NULL, accum = NULL, desc = NULL)
     # operator: can be binary op or monoid
-    if out == nothing
+    if out === nothing
         out = vector_from_type(A.type, size(A, 1))
     end
 
-    if operator == nothing
+    if operator === NULL
         operator = g_operators.monoid
     end
     operator_impl = _get(operator, A.type, A.type, A.type)
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+    if accum !== NULL
+        accum = _get(accum)
+    end
+
     # TODO: desc
-    desc = NULL
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
@@ -386,17 +381,18 @@ function reduce_vector(A::GBMatrix; out = nothing, operator = nothing, mask = no
     return out
 end
 
-function reduce_scalar(A::GBMatrix{T}; monoid = nothing, accum = nothing, desc = nothing) where T
-    if monoid == nothing
+function reduce_scalar(A::GBMatrix{T}; monoid = NULL, accum = NULL, desc = NULL) where T
+    if monoid === NULL
         monoid = g_operators.monoid
     end
     monoid_impl = _get(monoid, A.type)
 
-    # TODO: accum
-    accum = NULL
+    if accum !== NULL
+        accum = _get(accum)
+    end
+    
     # TODO: desc
-    desc = NULL
-
+    
     scalar = Ref(T(0))
     
     check(
@@ -411,17 +407,16 @@ function reduce_scalar(A::GBMatrix{T}; monoid = nothing, accum = nothing, desc =
     return scalar[]
 end
 
-function transpose(A::GBMatrix; out = nothing, mask = nothing, accum = nothing, desc = nothing)
-    if out == nothing
+function transpose(A::GBMatrix; out = nothing, mask = NULL, accum = NULL, desc = NULL)
+    if out === nothing
         out = matrix_from_type(A.type, reverse(size(A))...)
     end
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+    if accum !== NULL
+        accum = _get(accum)
+    end
+   
     # TODO: desc
-    desc = NULL
 
     check(
         ccall(
@@ -441,22 +436,21 @@ adjoint(A::GBMatrix) = transpose(A)
 #     return transpose(A, out = A, mask = mask, accum = accum, desc = desc)
 # end
 
-function kron(A::GBMatrix, B::GBMatrix; out = nothing, binaryop = nothing, mask = nothing, accum = nothing, desc = nothing)
-    if out == nothing
+function kron(A::GBMatrix, B::GBMatrix; out = nothing, binaryop = NULL, mask = NULL, accum = NULL, desc = NULL)
+    if out === nothing
         out = matrix_from_type(A.type, size(A) .* size(B)...)
     end
 
-    if binaryop == nothing
+    if binaryop === NULL
         binaryop = g_operators.binaryop
     end
     binaryop_impl = _get(binaryop, out.type, A.type, B.type)
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+    if accum !== NULL
+        accum = _get(accum)
+    end
+
     # TODO: desc
-    desc = NULL
 
     check(
         ccall(
@@ -472,19 +466,17 @@ function kron(A::GBMatrix, B::GBMatrix; out = nothing, binaryop = nothing, mask 
 end
 
 
-function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = nothing, mask = nothing, accum = nothing, desc = nothing)
+function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = nothing, mask = NULL, accum = NULL, desc = NULL)
     @assert ni > 0
 
-    if out == nothing
+    if out === nothing
         out = vector_from_type(A.type, ni)
     end
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+    if accum !== NULL
+        accum = _get(accum)
+    end
     # TODO: desc
-    desc = NULL
     
     check(
         ccall(
@@ -499,33 +491,32 @@ function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = nothing, mask
     return out
 end
 
-function _extract_col(A::GBMatrix, col, rows::GSpecial; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _extract_col(A::GBMatrix, col, rows::GSpecial; out = nothing, mask = NULL, accum = NULL, desc = NULL)
     return __extract_col__(A, col, rows.p, size(A, 1), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _extract_col(A::GBMatrix, col, rows::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _extract_col(A::GBMatrix, col, rows::Vector{I}; out = nothing, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     return __extract_col__(A, col, pointer(rows), length(rows), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _extract_row(A::GBMatrix, row, cols::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _extract_row(A::GBMatrix, row, cols::Vector{I}; out = nothing, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     # TODO: rewrite with transpose descriptor
     return _extract_col(A', row, cols, out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; out = nothing, mask = nothing, accum = nothing, desc = nothing)
+function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; out = nothing, mask = NULL, accum = NULL, desc = NULL)
     @assert ni > 0 && nj > 0
 
     if out == nothing
         out = matrix_from_type(A.type, ni, nj)
     end
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+    if accum !== NULL
+        accum = _get(accum)
+    end
+    
     # TODO: desc
-    desc = NULL
-
+    
     check(
         ccall(
             dlsym(graphblas_lib, "GrB_Matrix_extract"),
@@ -539,25 +530,24 @@ function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; out
     return out
 end
 
-function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = nothing, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     return __extract_matrix__(A, pointer(rows), pointer(cols), length(rows), length(cols), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _extract_matrix(A::GBMatrix, rows::GSpecial, cols::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _extract_matrix(A::GBMatrix, rows::GSpecial, cols::Vector{I}; out = nothing, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     return __extract_matrix__(A, rows.p, pointer(cols), size(A, 1), length(cols), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::GSpecial; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::GSpecial; out = nothing, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     return __extract_matrix__(A, pointer(rows), cols.p, length(rows), size(A, 2), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+    if accum !== NULL
+        accum = _get(accum)
+    end
+    
     # TODO: desc
-    desc = NULL
 
     check(
         ccall(
@@ -571,13 +561,12 @@ function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GS
     nothing
 end
 
-function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+    if accum !== NULL
+        accum = _get(accum)
+    end
+    
     # TODO: desc
-    desc = NULL
 
     check(
         ccall(
@@ -591,13 +580,12 @@ function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GS
     nothing
 end
 
-function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I},GSpecial}, cols::Union{Vector{I},GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I},GSpecial}, cols::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+    if accum !== NULL
+        accum = _get(accum)
+    end
+    
     # TODO: desc
-    desc = NULL
 
     check(
         ccall(
