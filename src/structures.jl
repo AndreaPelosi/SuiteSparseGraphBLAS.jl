@@ -100,3 +100,7 @@ _gb_pointer(op::SelectOperator) = op.p
 
 # default methods operators
 g_operators = nothing
+
+mutable struct GSpecial
+    p::Ptr{Cvoid}
+end

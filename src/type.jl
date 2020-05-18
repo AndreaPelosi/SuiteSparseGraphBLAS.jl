@@ -28,6 +28,12 @@ function load_gbtypes()
         load_type(suffix(t), t, suffix(t))
     end
     load_type("NULL", Nothing, C_NULL)
+
+    # load special values
+    for special_value in ["GrB_ALL"]
+        eval(Meta.parse("$special_value = GSpecial(load_global(\"$special_value\"))"))
+    end
+
 end
 
 function suffix(T::DataType)
