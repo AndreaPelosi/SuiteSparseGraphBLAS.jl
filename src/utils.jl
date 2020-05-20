@@ -27,6 +27,25 @@ function compile(lst...)
     end
 end
 
+function __get_args(kwargs)
+    out, operator, mask, accum, desc = NULL, NULL, NULL, NULL, NULL
+    for arg in kwargs
+        if arg[1] == :out
+            out = arg[2]
+        elseif arg[1] == :unaryop || arg[1] == :binaryop || arg[1] == :thunk ||
+            arg[1] == :semiring || arg[1] == :monoid || arg[1] == :operator
+            operator = arg[2]
+        elseif arg[1] == :mask
+            mask = arg[2]
+        elseif arg[1] == :accum
+            accum = arg[2]
+        elseif arg[1] == :desc
+            desc = arg[2]
+        end
+    end
+    return out, operator, mask, accum, desc
+end
+
 function check(info)
     if info == 1        # NO_VALUE
         throw(GraphBLASNoValueException())

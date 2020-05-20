@@ -95,23 +95,20 @@ getindex(v::GBVector, i::Union{UnitRange,Vector}) = _extract(v, _zero_based_inde
 getindex(v::GBVector, ::Colon) = copy(v)
 
 
-function emult(u::GBVector, v::GBVector; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
+function emult(u::GBVector, v::GBVector; kwargs...)
+    out, operator, mask, accum, desc = __get_args(kwargs)
+    
     # operator: can be binary op, monoid and semiring
-    if out == nothing
+    if out === NULL
         out = vector_from_type(u.type, size(u))
     end
 
-    if operator == nothing
+    if operator === NULL
         operator = g_operators.binaryop
     end
     operator_impl = _get(operator, out.type, u.type, v.type)
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
     # TODO: desc
-    desc = NULL
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
@@ -128,23 +125,20 @@ function emult(u::GBVector, v::GBVector; out = nothing, operator = nothing, mask
     return out
 end
 
-function eadd(u::GBVector, v::GBVector; out = nothing, operator = nothing, mask = nothing, accum = nothing, desc = nothing)
+function eadd(u::GBVector, v::GBVector; kwargs...)
+    out, operator, mask, accum, desc = __get_args(kwargs)
+
     # operator: can be binary op, monoid and semiring
-    if out == nothing
+    if out === NULL
         out = vector_from_type(u.type, size(u))
     end
 
-    if operator == nothing
+    if operator === NULL
         operator = g_operators.binaryop
     end
     operator_impl = _get(operator, out.type, u.type, v.type)
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
     # TODO: desc
-    desc = NULL
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
@@ -161,25 +155,22 @@ function eadd(u::GBVector, v::GBVector; out = nothing, operator = nothing, mask 
     return out
 end
 
-function vxm(u::GBVector, A::GBMatrix; out = nothing, semiring = nothing, mask = nothing, accum = nothing, desc = nothing)
+function vxm(u::GBVector, A::GBMatrix; kwargs...)
     rowA, colA = size(A)
     @assert size(u) == rowA
 
-    if out == nothing
+    out, semiring, mask, accum, desc = __get_args(kwargs)
+
+    if out === NULL
         out = vector_from_type(u.type, colA)
     end
 
-    if semiring == nothing
+    if semiring === NULL
         semiring = g_operators.semiring
     end
     semiring_impl = _get(semiring, out.type, u.type, A.type)
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
     # TODO: desc
-    desc = NULL
     
     check(
         ccall(
@@ -194,22 +185,19 @@ function vxm(u::GBVector, A::GBMatrix; out = nothing, semiring = nothing, mask =
     return out
 end
 
-function apply(u::GBVector; out = nothing, unaryop = nothing, mask = nothing, accum = nothing, desc = nothing)
-    if out == nothing
+function apply(u::GBVector; kwargs...)
+    out, unaryop, mask, accum, desc = __get_args(kwargs)
+    
+    if out === NULL
         out = vector_from_type(u.type, size(u))
     end
 
-    if unaryop == nothing
+    if unaryop === NULL
         unaryop = g_operators.unaryop
     end
     unaryop_impl = _get(unaryop, out.type, u.type)
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
     # TODO: desc
-    desc = NULL
 
     check(
         ccall(
@@ -224,23 +212,23 @@ function apply(u::GBVector; out = nothing, unaryop = nothing, mask = nothing, ac
     return out
 end
 
-function apply!(u::GBVector; unaryop = nothing, mask = nothing, accum = nothing, desc = nothing)
+function apply!(u::GBVector; kwargs...)
+    _, unaryop, mask, accum, desc = __get_args(kwargs)
     return apply(u, out = u, unaryop = unaryop, mask = mask, accum = accum, desc = desc)
 end
 
 # TODO: select
 
-function reduce(u::GBVector{T}; monoid = nothing, accum = nothing, desc = nothing) where T
-    if monoid == nothing
+function reduce(u::GBVector{T}; kwargs...) where T
+    _, monoid, _, accum, desc = __get_args(kwargs)
+    
+    if monoid === NULL
         monoid = g_operators.monoid
     end
     monoid_impl = _get(monoid, u.type)
 
-    # TODO: accum
-    accum = NULL
     # TODO: desc
-    desc = NULL
-
+ 
     scalar = Ref(T(0))
 
     check(
@@ -255,20 +243,17 @@ function reduce(u::GBVector{T}; monoid = nothing, accum = nothing, desc = nothin
     return scalar[]
 end
 
-function _extract(u::GBVector, indices::Vector{I}; out = nothing, mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
+function _extract(u::GBVector, indices::Vector{I}; kwargs...) where I <: Union{UInt64,Int64}
     ni = length(indices)
     @assert ni > 0
 
-    if out == nothing
+    out, _, mask, accum, desc = __get_args(kwargs)
+
+    if out === NULL
         out = vector_from_type(u.type, ni)
     end
 
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
     # TODO: desc
-    desc = NULL
 
     check(
         ccall(
@@ -283,13 +268,10 @@ function _extract(u::GBVector, indices::Vector{I}; out = nothing, mask = nothing
     return out
 end
 
-function _assign!(u::GBVector, v::GBVector, indices::Union{Vector{I},GSpecial}; mask = nothing, accum = nothing, desc = nothing) where I <: Union{UInt64,Int64}
-    # TODO: mask
-    mask = NULL
-    # TODO: accum
-    accum = NULL
+function _assign!(u::GBVector, v::GBVector, indices::Union{Vector{I},GSpecial}; kwargs...) where I <: Union{UInt64,Int64}
+    _, _, mask, accum, desc = __get_args(kwargs)
+    
     # TODO: desc
-    desc = NULL
     
     check(
         ccall(

@@ -192,11 +192,13 @@ function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = NULL, mask = NU
     return out
 end
 
-function mxv(A::GBMatrix, u::GBVector; out = nothing, semiring = NULL, mask = NULL, accum = NULL, desc = NULL)
+function mxv(A::GBMatrix, u::GBVector; kwargs...)
     rowA, colA = size(A)
     @assert colA == size(u)
 
-    if out === nothing
+    out, semiring, mask, accum, desc = __get_args(kwargs)
+
+    if out === NULL
         out = vector_from_type(A.type, rowA)
     end
 
@@ -224,11 +226,13 @@ function mxv(A::GBMatrix, u::GBVector; out = nothing, semiring = NULL, mask = NU
     return out
 end
 
-function emult(A::GBMatrix, B::GBMatrix; out = nothing, operator = NULL, mask = NULL, accum = NULL, desc = NULL)
+function emult(A::GBMatrix, B::GBMatrix; kwargs...)
     # operator: can be binaryop, monoid, semiring
     @assert size(A) == size(B)
 
-    if out === nothing
+    out, operator, mask, accum, desc = __get_args(kwargs)
+
+    if out === NULL
         out = matrix_from_type(A.type, size(A)...)
     end
 
@@ -258,11 +262,13 @@ function emult(A::GBMatrix, B::GBMatrix; out = nothing, operator = NULL, mask = 
     return out
 end
 
-function eadd(A::GBMatrix, B::GBMatrix; out = nothing, operator = NULL, mask = NULL, accum = NULL, desc = NULL)
+function eadd(A::GBMatrix, B::GBMatrix; kwargs...)
     # operator: can be binaryop, monoid and semiring
     @assert size(A) == size(B)
 
-    if out === nothing
+    out, operator, mask, accum, desc = __get_args(kwargs)
+
+    if out === NULL
         out = matrix_from_type(A.type, size(A)...)
     end
 
@@ -292,8 +298,10 @@ function eadd(A::GBMatrix, B::GBMatrix; out = nothing, operator = NULL, mask = N
     return out
 end
 
-function apply(A::GBMatrix; out = nothing, unaryop = NULL, mask = NULL, accum = NULL, desc = NULL)
-    if out === nothing
+function apply(A::GBMatrix; kwargs...)
+    out, unaryop, mask, accum, desc = __get_args(kwargs)
+
+    if out === NULL
         out = matrix_from_type(A.type, size(A)...)
     end
 
@@ -321,12 +329,15 @@ function apply(A::GBMatrix; out = nothing, unaryop = NULL, mask = NULL, accum = 
     return out
 end
 
-function apply!(A::GBMatrix; unaryop = NULL, mask = NULL, accum = NULL, desc = NULL)
-    return apply(A, out = A, unaryop = unaryop, mask = mask, accum = accum, desc = desc)
+function apply!(A::GBMatrix; kwargs...)
+    _, operator, mask, accum, desc = __get_args(kwargs)
+    return apply(A, out = A, operator = operator, mask = mask, accum = accum, desc = desc)
 end
 
-function select(A::GBMatrix, op::SelectOperator; out = nothing, thunk = NULL, mask = NULL, accum = NULL, desc = NULL)
-    if out === nothing
+function select(A::GBMatrix, op::SelectOperator; kwargs...)
+    out, thunk, mask, accum, desc = __get_args(kwargs)
+    
+    if out === NULL
         out = matrix_from_type(A.type, size(A)...)
     end
 
@@ -349,9 +360,11 @@ function select(A::GBMatrix, op::SelectOperator; out = nothing, thunk = NULL, ma
     return out
 end
 
-function reduce_vector(A::GBMatrix; out = nothing, operator = NULL, mask = NULL, accum = NULL, desc = NULL)
+function reduce_vector(A::GBMatrix; kwargs...)
+    out, operator, mask, accum, desc = __get_args(kwargs)
+    
     # operator: can be binary op or monoid
-    if out === nothing
+    if out === NULL
         out = vector_from_type(A.type, size(A, 1))
     end
 
@@ -381,7 +394,9 @@ function reduce_vector(A::GBMatrix; out = nothing, operator = NULL, mask = NULL,
     return out
 end
 
-function reduce_scalar(A::GBMatrix{T}; monoid = NULL, accum = NULL, desc = NULL) where T
+function reduce_scalar(A::GBMatrix{T}; kwargs...) where T
+    _, monoid, _, accum, desc = __get_args(kwargs)
+    
     if monoid === NULL
         monoid = g_operators.monoid
     end
@@ -407,8 +422,10 @@ function reduce_scalar(A::GBMatrix{T}; monoid = NULL, accum = NULL, desc = NULL)
     return scalar[]
 end
 
-function transpose(A::GBMatrix; out = nothing, mask = NULL, accum = NULL, desc = NULL)
-    if out === nothing
+function transpose(A::GBMatrix; kwargs...)
+    out, _, mask, accum, desc = __get_args(kwargs)
+    
+    if out === NULL
         out = matrix_from_type(A.type, reverse(size(A))...)
     end
 
@@ -436,8 +453,10 @@ adjoint(A::GBMatrix) = transpose(A)
 #     return transpose(A, out = A, mask = mask, accum = accum, desc = desc)
 # end
 
-function kron(A::GBMatrix, B::GBMatrix; out = nothing, binaryop = NULL, mask = NULL, accum = NULL, desc = NULL)
-    if out === nothing
+function kron(A::GBMatrix, B::GBMatrix; kwargs...)
+    out, binaryop, mask, accum, desc = __get_args(kwargs)
+    
+    if out === NULL
         out = matrix_from_type(A.type, size(A) .* size(B)...)
     end
 
@@ -466,10 +485,11 @@ function kron(A::GBMatrix, B::GBMatrix; out = nothing, binaryop = NULL, mask = N
 end
 
 
-function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = nothing, mask = NULL, accum = NULL, desc = NULL)
+function __extract_col__(A::GBMatrix, col, pointer_rows, ni; kwargs...)
     @assert ni > 0
+    out, _, mask, accum, desc = __get_args(kwargs)
 
-    if out === nothing
+    if out === NULL
         out = vector_from_type(A.type, ni)
     end
 
@@ -491,23 +511,24 @@ function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = nothing, mask
     return out
 end
 
-function _extract_col(A::GBMatrix, col, rows::GSpecial; out = nothing, mask = NULL, accum = NULL, desc = NULL)
-    return __extract_col__(A, col, rows.p, size(A, 1), out = out, mask = mask, accum = accum, desc = desc)
+function _extract_col(A::GBMatrix, col, rows::GSpecial; kwargs...)
+    return __extract_col__(A, col, rows.p, size(A, 1), kwargs...)
 end
 
-function _extract_col(A::GBMatrix, col, rows::Vector{I}; out = nothing, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
-    return __extract_col__(A, col, pointer(rows), length(rows), out = out, mask = mask, accum = accum, desc = desc)
+function _extract_col(A::GBMatrix, col, rows::Vector{I}; kwargs...) where I <: Union{UInt64,Int64}
+    return __extract_col__(A, col, pointer(rows), length(rows), kwargs...)
 end
 
-function _extract_row(A::GBMatrix, row, cols::Vector{I}; out = nothing, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+function _extract_row(A::GBMatrix, row, cols::Vector{I}; kwargs...) where I <: Union{UInt64,Int64}
     # TODO: rewrite with transpose descriptor
-    return _extract_col(A', row, cols, out = out, mask = mask, accum = accum, desc = desc)
+    return _extract_col(A', row, cols, kwargs...)
 end
 
-function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; out = nothing, mask = NULL, accum = NULL, desc = NULL)
+function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; kwargs...)
     @assert ni > 0 && nj > 0
+    out, _, mask, accum, desc = __get_args(kwargs)
 
-    if out == nothing
+    if out === NULL
         out = matrix_from_type(A.type, ni, nj)
     end
 
@@ -530,19 +551,21 @@ function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; out
     return out
 end
 
-function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = nothing, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
-    return __extract_matrix__(A, pointer(rows), pointer(cols), length(rows), length(cols), out = out, mask = mask, accum = accum, desc = desc)
+function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; kwargs...) where I <: Union{UInt64,Int64}
+    return __extract_matrix__(A, pointer(rows), pointer(cols), length(rows), length(cols), kwargs...)
 end
 
-function _extract_matrix(A::GBMatrix, rows::GSpecial, cols::Vector{I}; out = nothing, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
-    return __extract_matrix__(A, rows.p, pointer(cols), size(A, 1), length(cols), out = out, mask = mask, accum = accum, desc = desc)
+function _extract_matrix(A::GBMatrix, rows::GSpecial, cols::Vector{I}; kwargs...) where I <: Union{UInt64,Int64}
+    return __extract_matrix__(A, rows.p, pointer(cols), size(A, 1), length(cols), kwargs...)
 end
 
-function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::GSpecial; out = nothing, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
-    return __extract_matrix__(A, pointer(rows), cols.p, length(rows), size(A, 2), out = out, mask = mask, accum = accum, desc = desc)
+function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::GSpecial; kwargs...) where I <: Union{UInt64,Int64}
+    return __extract_matrix__(A, pointer(rows), cols.p, length(rows), size(A, 2), kwargs...)
 end
 
-function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GSpecial}; kwargs...) where I <: Union{UInt64,Int64}
+    _, _, mask, accum, desc = __get_args(kwargs)
+    
     if accum !== NULL
         accum = _get(accum)
     end
@@ -561,7 +584,9 @@ function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GS
     nothing
 end
 
-function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GSpecial}; kwargs...) where I <: Union{UInt64,Int64}
+    _, _, mask, accum, desc = __get_args(kwargs)
+    
     if accum !== NULL
         accum = _get(accum)
     end
@@ -580,7 +605,9 @@ function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GS
     nothing
 end
 
-function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I},GSpecial}, cols::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I},GSpecial}, cols::Union{Vector{I},GSpecial}; kwargs...) where I <: Union{UInt64,Int64}
+    _, _, mask, accum, desc = __get_args(kwargs)
+    
     if accum !== NULL
         accum = _get(accum)
     end
