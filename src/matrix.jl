@@ -1,37 +1,67 @@
 import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix
 
-function matrix_from_type(type::GType, nrows = 0, ncols = 0)
-    m = GBMatrix{type.jtype}()
-    GrB_Matrix_new(m, type, nrows, ncols)
-    finalizer(_free, m)
-    return m
+"""
+    matrix_from_type(type, m, n)
+
+Create an empty GBMatrix of size m×n from the given type `type`.
+
+"""
+function matrix_from_type(type::GType, m, n)
+    r = GBMatrix{type.jtype}()
+    GrB_Matrix_new(r, type, m, n)
+    finalizer(_free, r)
+    return r
 end
 
-function matrix_from_lists(I, J, V; nrows = nothing, ncols = nothing, type = NULL, combine = NULL)
+"""
+    matrix_from_lists(I, J, V; m = nothing, n = nothing, type = NULL, combine = NULL)
+
+Create a new GBMatrix from the given lists of row indices, column indices and values.
+If `m` and `n` are not provided, they are computed from the max values of the row and column indices lists, respectively.
+If `type` is not provided, it is inferred from the values list.
+A combiner Binary Operator can be provided to manage duplicates values. If it is not provided, the default `BinaryOp.FIRST` is used.
+
+# Arguments
+- `I`: the list of row indices.
+- `J`: the list of column indices.
+- `V`: the list of values.
+- `m`: the number of rows.
+- `n`: the number of columns.
+- `type`: the GBType of the GBMatrix.
+- `combine`: the `BinaryOperator` which assembles any duplicate entries with identical indices.
+
+"""
+function matrix_from_lists(I, J, V; m = nothing, n = nothing, type = NULL, combine = NULL)
     @assert length(I) == length(J) == length(V)
-    if nrows === nothing
-        nrows = max(I...)
+    if m === nothing
+        m = maximum(I)
     end
-    if ncols === nothing
-        ncols = max(J...)
+    if n === nothing
+        n = maximum(J)
     end
     if type === NULL
         type = j2gtype(eltype(V))
     elseif type.jtype != eltype(V)
         V = convert.(type.jtype, V)
     end
-    m = matrix_from_type(type, nrows, ncols)
+    m = matrix_from_type(type, m, n)
 
     if combine === NULL
         combine = Binaryop.FIRST
     end
     combine_bop = _get(combine, type, type, type)
-    map!(x->x - 1, I, I)
-    map!(x->x - 1, J, J)
+    I = map(x->x - 1, I)
+    J = map(x->x - 1, J)
     GrB_Matrix_build(m, I, J, V, length(V), combine_bop)
     return m
 end
 
+"""
+    from_matrix(m)
+
+Create a GBMatrix from the given Matrix `m`.
+
+"""
 function from_matrix(m)
     r, c = size(m)
     res = matrix_from_type(j2gtype(eltype(m)), r, c)
@@ -50,6 +80,12 @@ function from_matrix(m)
     return res
 end
 
+"""
+    identity(type, n)
+
+Create an identity GBMatrix of size n×n with the given type `type`.
+
+"""
 function identity(type, n)
     res = matrix_from_type(type, n, n)
     for i in 1:n
@@ -58,6 +94,12 @@ function identity(type, n)
     return res
 end
 
+"""
+    Matrix(A::GBMatrix{T})
+
+Construct a Matrix{T} from a GBMatrix{T} A.
+
+"""
 function Matrix(A::GBMatrix{T}) where T
     rows, cols = size(A)
     res = Matrix{T}(undef, rows, cols)
@@ -70,6 +112,23 @@ function Matrix(A::GBMatrix{T}) where T
     return res
 end
 
+"""
+    size(m::GBMatrix, [dim])
+
+Return a tuple containing the dimensions of m.
+Optionally you can specify a dimension to just get the length of that dimension.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2 3; 4 5 6]);
+
+julia> size(A)
+(2, 3)
+
+julia> size(A, 1)
+2
+```
+"""
 function size(m::GBMatrix, dim = nothing)
     if dim === nothing
         return (Int64(GrB_Matrix_nrows(m)), Int64(GrB_Matrix_ncols(m)))
@@ -82,29 +141,100 @@ function size(m::GBMatrix, dim = nothing)
     end
 end
 
+"""
+    square(m::GBMatrix)
+
+Return true if `m` is a square matrix.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2; 4 5]);
+
+julia> square(A)
+true
+```
+"""
 function square(m::GBMatrix)
     rows, cols = size(m)
     return rows == cols
 end
 
+"""
+    copy(m::GBMatrix)
+
+Create a copy of m.
+
+"""
 function copy(m::GBMatrix)
     cpy = matrix_from_type(m.type, size(m)...)
     GrB_Matrix_dup(cpy, m)
     return cpy
 end
 
+"""
+    findnz(m::GBMatrix)
+
+Return a tuple `(I, J, V)` where `I` and `J` are the row and column lists of the "non-zero" values in `m`,
+and `V` is a list of "non-zero" values.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2 0; 0 0 1]);
+
+julia> findnz(A)
+([1, 1, 2], [1, 2, 3], [1, 2, 1])
+```
+"""
 function findnz(m::GBMatrix)
-    return GrB_Matrix_extractTuples(m)
+    I, J, V = GrB_Matrix_extractTuples(m)
+    map!(x->x + 1, I, I)
+    map!(x->x + 1, J, J)
+    return I, J, V
 end
 
+"""
+    nnz(m::GBMatrix)
+
+Return the number of entries in a matrix `m`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2 0; 0 0 1]);
+
+julia> nnz(A)
+3
+```
+"""
 function nnz(m::GBMatrix)
     return Int64(GrB_Matrix_nvals(m))
 end
 
+"""
+    clear!(m::GBMatrix)
+
+Clear all entries from a matrix `m`.
+
+"""
 function clear!(m::GBMatrix)
     GrB_Matrix_clear(m)
 end
 
+"""
+    lastindex(m::GBMatrix, [d])
+
+Return the last index of a matrix `m`. If `d` is given, return the last index of `m` along dimension `d`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2 0; 0 0 1]);
+
+julia> lastindex(A)
+(2, 3)
+
+julia> lastindex(A, 2)
+3
+```
+"""
 function lastindex(m::GBMatrix, d = nothing)
     return size(m, d)
 end
@@ -157,12 +287,39 @@ getindex(m::GBMatrix, i::Colon, j::Union{UnitRange,Vector}) =
 _zero_based_indexes(i::Vector) = map!(x->x - 1, i, i)
 _zero_based_indexes(i::UnitRange) = collect(i .- 1)
 
-function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = NULL, mask = NULL, accum = NULL, desc = NULL)
+"""
+    mxm(A::GBMatrix, B::GBMatrix; kwargs...)
+
+Multiply two sparse matrix `A` and `B` using the `semiring`. If a `semiring` is not provided, it uses the default semiring.
+
+# Arguments
+- `A`: the first matrix.
+- `B`: the second matrix.
+- `[out]`: the output matrix for result.
+- `[semiring]`: the semiring to use.
+- `[accum]`: optional accumulator.
+- `[mask]`: optional mask.
+- `[desc]`: descriptor for `out`, `mask`, `A` and `B`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2; 3 4]);
+
+julia> B = copy(A);
+
+julia> out = mxm(A, B, semiring = Semirings.PLUS_TIMES)
+
+# TODO: insert output
+```
+"""
+function mxm(A::GBMatrix, B::GBMatrix; kwargs...)
     rowA, colA = size(A)
     rowB, colB = size(B)
     @assert colA == rowB
 
-    if out === nothing
+    out, semiring, mask, accum, desc = __get_args(kwargs)
+
+    if out === NULL
         out = matrix_from_type(A.type, rowA, colB)
     end
 
@@ -188,6 +345,31 @@ function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = NULL, mask = NU
     return out
 end
 
+"""
+    mxv(A::GBMatrix, u::GBVector; kwargs...)
+
+Multiply a sparse matrix `A` times a column vector `u`.
+
+# Arguments
+- `A`: the sparse matrix.
+- `u`: the column vector.
+- `[out]`: the output vector for result.
+- `[semiring]`: the semiring to use.
+- `[accum]`: optional accumulator.
+- `[mask]`: optional mask.
+- `[desc]`: descriptor for `out`, `mask`, `A` and `B`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2; 3 4]);
+
+julia> u = from_vector([1, 2]);
+
+julia> out = mxv(A, u, semiring = Semirings.PLUS_TIMES)
+
+# TODO: insert output
+```
+"""
 function mxv(A::GBMatrix, u::GBVector; kwargs...)
     rowA, colA = size(A)
     @assert colA == size(u)
@@ -220,6 +402,33 @@ function mxv(A::GBMatrix, u::GBVector; kwargs...)
     return out
 end
 
+"""
+    emult(A::GBMatrix, B::GBMatrix; kwargs...)
+
+Compute the element-wise "multiplication" of two matrices `A` and `B`, using a `Binary Operator`, a `Monoid` or a `Semiring`.
+If given a `Monoid`, the additive operator of the monoid is used as the multiply binary operator.
+If given a `Semiring`, the multiply operator of the semiring is used as the multiply binary operator.
+
+# Arguments
+- `A`: the first matrix.
+- `B`: the second matrix.
+- `[out]`: the output matrix for result.
+- `[operator]`: the operator to use. Can be either a Binary Operator, or a Monoid or a Semiring.
+- `[accum]`: optional accumulator.
+- `[mask]`: optional mask.
+- `[desc]`: descriptor for `out`, `mask`, `A` and `B`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2; 3 4]);
+
+julia> B = copy(A);
+
+julia> out = emult(A, B, operator = Binaryop.PLUS)
+
+# TODO: insert output
+```
+"""
 function emult(A::GBMatrix, B::GBMatrix; kwargs...)
     # operator: can be binaryop, monoid, semiring
     @assert size(A) == size(B)
@@ -254,6 +463,33 @@ function emult(A::GBMatrix, B::GBMatrix; kwargs...)
     return out
 end
 
+"""
+    eadd(A::GBMatrix, B::GBMatrix; kwargs...)
+
+Compute the element-wise "addition" of two matrices `A` and `B`, using a `Binary Operator`, a `Monoid` or a `Semiring`.
+If given a `Monoid`, the additive operator of the monoid is used as the add binary operator.
+If given a `Semiring`, the additive operator of the semiring is used as the add binary operator.
+
+# Arguments
+- `A`: the first matrix.
+- `B`: the second matrix.
+- `[out]`: the output matrix for result.
+- `[operator]`: the operator to use. Can be either a Binary Operator, or a Monoid or a Semiring.
+- `[accum]`: optional accumulator.
+- `[mask]`: optional mask.
+- `[desc]`: descriptor for `out`, `mask`, `A` and `B`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2; 3 4]);
+
+julia> B = copy(A);
+
+julia> out = eadd(A, B, operator = Binaryop.PLUS)
+
+# TODO: insert output
+```
+"""
 function eadd(A::GBMatrix, B::GBMatrix; kwargs...)
     # operator: can be binaryop, monoid and semiring
     @assert size(A) == size(B)
@@ -288,6 +524,28 @@ function eadd(A::GBMatrix, B::GBMatrix; kwargs...)
     return out
 end
 
+"""
+    apply(A::GBMatrix; kwargs...)
+
+Apply a `Unary Operator` to the entries of a matrix `A`, creating a new matrix.
+
+# Arguments
+- `A`: the sparse matrix.
+- `[out]`: the output matrix for result.
+- `[unaryop]`: the Unary Operator to use.
+- `[accum]`: optional accumulator.
+- `[mask]`: optional mask.
+- `[desc]`: descriptor for `out`, `mask` and `A`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([-1 2; -3 -4]);
+
+julia> out = apply(A, unaryop = Unaryop.ABS)
+
+# TODO: insert output
+```
+"""
 function apply(A::GBMatrix; kwargs...)
     out, unaryop, mask, accum, desc = __get_args(kwargs)
 
@@ -317,11 +575,53 @@ function apply(A::GBMatrix; kwargs...)
     return out
 end
 
+"""
+    apply!(A::GBMatrix; kwargs...)
+
+Apply a `Unary Operator` to the entries of a matrix `A`.
+
+# Arguments
+- `A`: the sparse matrix.
+- `[unaryop]`: the Unary Operator to use.
+- `[accum]`: optional accumulator.
+- `[mask]`: optional mask.
+- `[desc]`: descriptor for mask` and `A`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([-1 2; -3 -4]);
+
+julia> out = apply(A, unaryop = Unaryop.ABS)
+
+# TODO: insert output
+```
+"""
 function apply!(A::GBMatrix; kwargs...)
     _, operator, mask, accum, desc = __get_args(kwargs)
     return apply(A, out = A, operator = operator, mask = mask, accum = accum, desc = desc)
 end
 
+"""
+    select(A::GBMatrix, op::SelectOperator; kwargs...)
+
+Apply a `Select Operator` to the entries of a matrix `A`.
+
+# Arguments
+- `A`: the sparse matrix.
+- `op`: the `Select Operator` to use.
+- `[out]`: the output matrix for result.
+- `[thunk]`: optional input for the `Select Operator`.
+- `[accum]`: optional accumulator.
+- `[mask]`: optional mask.
+- `[desc]`: descriptor for `out`, `mask` and `A`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2; 3 4]);
+
+# TODO: insert example
+```
+"""
 function select(A::GBMatrix, op::SelectOperator; kwargs...)
     out, thunk, mask, accum, desc = __get_args(kwargs)
     
@@ -346,6 +646,30 @@ function select(A::GBMatrix, op::SelectOperator; kwargs...)
     return out
 end
 
+"""
+    reduce_vector(A::GBMatrix; kwargs...)
+
+Reduce a matrix `A` to a column vector using an operator.
+Normally the operator is a `Binary Operator`, in which all the three domains must be the same.
+It can be used a `Monoid` as an operator. In both cases the reduction operator must be commutative and associative.
+
+# Arguments
+- `A`: the sparse matrix.
+- `[out]`: the output matrix for result.
+- `[operator]`: reduce operator.
+- `[accum]`: optional accumulator.
+- `[mask]`: optional mask.
+- `[desc]`: descriptor for `out`, `mask` and `A`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2; 3 4]);
+
+julia> out = reduce_vector(A, operator = Binaryop.PLUS)
+
+# TODO: insert output
+```
+"""
 function reduce_vector(A::GBMatrix; kwargs...)
     out, operator, mask, accum, desc = __get_args(kwargs)
     
@@ -378,6 +702,25 @@ function reduce_vector(A::GBMatrix; kwargs...)
     return out
 end
 
+"""
+    reduce_scalar(A::GBMatrix{T}; kwargs...) -> T
+
+Reduce a matrix `A` to a scalar, using the given `Monoid`.
+
+# Arguments
+- `A`: the sparse matrix to reduce.
+- `[monoid]`: monoid to do the reduction.
+- `[accum]`: optional accumulator.
+- `[desc]`: descriptor for `A`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2; 3 4]);
+
+julia> out = reduce_scalar(A, monoid = Monoids.PLUS)
+10
+```
+"""
 function reduce_scalar(A::GBMatrix{T}; kwargs...) where T
     _, monoid, _, accum, desc = __get_args(kwargs)
     
@@ -404,6 +747,27 @@ function reduce_scalar(A::GBMatrix{T}; kwargs...) where T
     return scalar[]
 end
 
+"""
+    transpose(A::GBMatrix; kwargs...)
+
+Transpose a matrix `A`.
+
+# Arguments
+- `A`: the sparse matrix to transpose.
+- `[out]`: the output matrix for result.
+- `[mask]`: optional mask.
+- `[accum]`: optional accumulator.
+- `[desc]`: descriptor for `out`, `mask` and `A`.
+
+# Examples
+```julia-repl
+julia> A = from_matrix([1 2 3; 4 5 6]);
+
+julia> out = transpose(A)
+
+#TODO: insert output
+```
+"""
 function transpose(A::GBMatrix; kwargs...)
     out, _, mask, accum, desc = __get_args(kwargs)
     
@@ -433,6 +797,26 @@ adjoint(A::GBMatrix) = transpose(A)
 #     return transpose(A, out = A, mask = mask, accum = accum, desc = desc)
 # end
 
+"""
+    kron(A::GBMatrix, B::GBMatrix; kwargs...)
+
+Compute the Kronecker product, using the given `Binary Operator`.
+
+# Arguments
+- `A`: the first matrix.
+- `B`: the second matrix.
+- `[out]`: the output matrix for result.
+- `[binaryop]`: the `Binary Operator` to use.
+- `[mask]`: optional mask.
+- `[accum]`: optional accumulator.
+- `[desc]`: descriptor for `out`, `mask` and `A`.
+
+# Examples
+```julia-repl
+
+#TODO: insert example
+```
+"""
 function kron(A::GBMatrix, B::GBMatrix; kwargs...)
     out, binaryop, mask, accum, desc = __get_args(kwargs)
     
@@ -595,7 +979,7 @@ function _free(A::GBMatrix)
             (Ptr{Cvoid},),
             pointer_from_objref(A)
             )
-        )
+)
 end
   
 _gb_pointer(m::GBMatrix) = m.p

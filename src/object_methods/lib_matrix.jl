@@ -228,8 +228,8 @@ Returns zero based indices by default.
 function GrB_Matrix_extractTuples(A::GBMatrix{T}) where T
     nvals = GrB_Matrix_nvals(A)
 
-    row_indices = Vector{UInt64}(undef, nvals)
-    col_indices = Vector{UInt64}(undef, nvals)
+    row_indices = Vector{Int64}(undef, nvals)
+    col_indices = Vector{Int64}(undef, nvals)
     vals = Vector{T}(undef, nvals)
     n = Ref(UInt64(nvals))
 
