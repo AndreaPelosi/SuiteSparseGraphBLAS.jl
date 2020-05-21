@@ -59,4 +59,8 @@ export GraphBLASNoValueException,
        GraphBLASIndexOutOfBoundException,
        GraphBLASPanicException
 
+# export matrix operations
+export matrix_from_type, matrix_from_lists, from_matrix, identity, square, findnz, nnz, clear!,
+    mxm, mxv, emult, eadd, apply, apply!, select, reduce_vector, reduce_scalar, transpose, kron
+
 end # end of module
