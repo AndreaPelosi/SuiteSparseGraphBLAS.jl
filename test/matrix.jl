@@ -20,19 +20,19 @@
     
     # automatic type inference, nvals and ncols given
     I, J, X = [1, 1], [1, 2], Int8[2, 3]
-    matrix_filled = SG.matrix_from_lists(I, J, X, nrows = 2, ncols = 3)
+    matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3)
     @test matrix_filled.type == INT8
     @test size(matrix_filled) == (2, 3)
 
     # passed type parameter
     I, J, X = [1, 1], [1, 2], Int8[2, 3]
-    matrix_filled = SG.matrix_from_lists(I, J, X, nrows = 2, ncols = 3, type = INT32)
+    matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3, type = INT32)
     @test matrix_filled.type == INT32
     @test size(matrix_filled) == (2, 3)
 
     # combine parameter - default (FIRST)
     I, J, X = [1, 1], [1, 1], Int8[2, 3]
-    matrix_filled = SG.matrix_from_lists(I, J, X, nrows = 2, ncols = 3)
+    matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3)
     @test matrix_filled.type == INT8
     @test size(matrix_filled) == (2, 3)
     @test matrix_filled[1,1] == 2
@@ -40,7 +40,7 @@
 
     # combine parameter - given
     I, J, X = [1, 1], [1, 1], Int8[2, 3]
-    matrix_filled = SG.matrix_from_lists(I, J, X, nrows = 2, ncols = 3, combine = Binaryop.PLUS)
+    matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3, combine = Binaryop.PLUS)
     @test matrix_filled.type == INT8
     @test size(matrix_filled) == (2, 3)
     @test matrix_filled[1,1] == 5
@@ -151,7 +151,7 @@
 
     # getindex
     I, J, X = [1, 1], [1, 2], [2, 3]
-    matrix = SG.matrix_from_lists(I, J, X, nrows = 2, ncols = 2)
+    matrix = SG.matrix_from_lists(I, J, X, m = 2, n = 2)
     @test matrix[1,1] == 2
     @test matrix[1,2] == 3
     @test matrix[2,1] == 0
@@ -159,7 +159,7 @@
 
     # setindex
     I, J, X = [1, 1], [1, 2], [2, 3]
-    matrix = SG.matrix_from_lists(I, J, X, nrows = 2, ncols = 2)
+    matrix = SG.matrix_from_lists(I, J, X, m = 2, n = 2)
     matrix[1,1] = 10
     matrix[2,2] = 20
     @test matrix[1,1] == 10
