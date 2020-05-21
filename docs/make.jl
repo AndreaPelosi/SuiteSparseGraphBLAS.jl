@@ -1,4 +1,4 @@
-using Documenter, GraphBLASInterface, SuiteSparseGraphBLAS
+using Documenter, SuiteSparseGraphBLAS
 
 makedocs(
     modules     = [SuiteSparseGraphBLAS],
@@ -7,13 +7,7 @@ makedocs(
     doctest     = false,
     pages       = Any[
 		"Home"								=> "index.md",
-		"Context methods"					=> "context_methods.md",
-        "Basic matrix & vector methods"     => "matrix_and_vector_methods.md",
-		"Operators & algebraic structures"	=> "algebra_methods.md",
-		"Descriptors"						=> "desc_methods.md",
-		"Freeing objects"					=> "free_methods.md",
-		"Sequence termination"				=> "seq_ter.md",
-		"Operations"						=> "operations.md"
+		"Matrix operations"					=> "matrix.md",
     ]
 )
 
@@ -21,5 +15,5 @@ deploydocs(
     target = "build",
     deps   = nothing,
     make   = nothing,
-    repo   = "github.com/abhinavmehndiratta/SuiteSparseGraphBLAS.jl.git"
+    repo   = "https://github.com/cvdlab/SuiteSparseGraphBLAS.jl"
 )

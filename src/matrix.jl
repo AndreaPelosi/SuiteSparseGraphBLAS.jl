@@ -1,4 +1,4 @@
-import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix
+import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix, identity, kron, transpose
 
 """
     matrix_from_type(type, m, n)
