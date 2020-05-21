@@ -1,6 +1,4 @@
 import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix
-    
-_gb_pointer(m::GBMatrix) = m.p
 
 function matrix_from_type(type::GType, nrows = 0, ncols = 0)
     m = GBMatrix{type.jtype}()
@@ -173,8 +171,6 @@ function mxm(A::GBMatrix, B::GBMatrix; out = nothing, semiring = NULL, mask = NU
     end
     semiring_impl = _get(semiring, out.type, A.type, B.type)
 
-    # TODO: desc
-
     if accum !== NULL
         accum = _get(accum)
     end
@@ -211,8 +207,6 @@ function mxv(A::GBMatrix, u::GBVector; kwargs...)
         accum = _get(accum)
     end
 
-    # TODO: desc
-
     check(
         ccall(
             dlsym(graphblas_lib, "GrB_mxv"),
@@ -244,8 +238,6 @@ function emult(A::GBMatrix, B::GBMatrix; kwargs...)
     if accum !== NULL
         accum = _get(accum)
     end
-
-    # TODO: desc
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
@@ -280,8 +272,6 @@ function eadd(A::GBMatrix, B::GBMatrix; kwargs...)
     if accum !== NULL
         accum = _get(accum)
     end
-    
-    # TODO: desc
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
@@ -314,8 +304,6 @@ function apply(A::GBMatrix; kwargs...)
         accum = _get(accum)
     end
 
-    # TODO: desc
-
     check(
         ccall(
             dlsym(graphblas_lib, "GrB_Matrix_apply"),
@@ -340,8 +328,6 @@ function select(A::GBMatrix, op::SelectOperator; kwargs...)
     if out === NULL
         out = matrix_from_type(A.type, size(A)...)
     end
-
-    # TODO: desc
 
     if accum === NULL
         accum = _get(accum)
@@ -377,8 +363,6 @@ function reduce_vector(A::GBMatrix; kwargs...)
         accum = _get(accum)
     end
 
-    # TODO: desc
-
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
     check(
@@ -406,8 +390,6 @@ function reduce_scalar(A::GBMatrix{T}; kwargs...) where T
         accum = _get(accum)
     end
     
-    # TODO: desc
-    
     scalar = Ref(T(0))
     
     check(
@@ -432,8 +414,6 @@ function transpose(A::GBMatrix; kwargs...)
     if accum !== NULL
         accum = _get(accum)
     end
-   
-    # TODO: desc
 
     check(
         ccall(
@@ -469,8 +449,6 @@ function kron(A::GBMatrix, B::GBMatrix; kwargs...)
         accum = _get(accum)
     end
 
-    # TODO: desc
-
     check(
         ccall(
             dlsym(graphblas_lib, "GxB_kron"),
@@ -485,7 +463,7 @@ function kron(A::GBMatrix, B::GBMatrix; kwargs...)
 end
 
 
-function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = NULL, mask=NULL, accum=NULL, desc=NULL)
+function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = NULL, mask = NULL, accum = NULL, desc = NULL)
     @assert ni > 0
 
     if out === NULL
@@ -495,8 +473,7 @@ function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = NULL, mask=NU
     if accum !== NULL
         accum = _get(accum)
     end
-    # TODO: desc
-    
+
     check(
         ccall(
             dlsym(graphblas_lib, "GrB_Col_extract"),
@@ -510,20 +487,20 @@ function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = NULL, mask=NU
     return out
 end
 
-function _extract_col(A::GBMatrix, col, rows::GSpecial; out = NULL, mask=NULL, accum=NULL, desc=NULL)
-    return __extract_col__(A, col, rows.p, size(A, 1), out=out, mask=mask, accum=accum, desc=desc)
+function _extract_col(A::GBMatrix, col, rows::GSpecial; out = NULL, mask = NULL, accum = NULL, desc = NULL)
+    return __extract_col__(A, col, rows.p, size(A, 1), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _extract_col(A::GBMatrix, col, rows::Vector{I}; out = NULL, mask=NULL, accum=NULL, desc=NULL) where I <: Union{UInt64,Int64}
-    return __extract_col__(A, col, pointer(rows), length(rows), out=out, mask=mask, accum=accum, desc=desc)
+function _extract_col(A::GBMatrix, col, rows::Vector{I}; out = NULL, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+    return __extract_col__(A, col, pointer(rows), length(rows), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _extract_row(A::GBMatrix, row, cols; out = NULL, mask=NULL, accum=NULL)
+function _extract_row(A::GBMatrix, row, cols; out = NULL, mask = NULL, accum = NULL)
     tran_descriptor = descriptor(inp0 => tran)
-    return _extract_col(A, row, cols, out=out, mask=mask, accum=accum, desc=tran_descriptor)
+    return _extract_col(A, row, cols, out = out, mask = mask, accum = accum, desc = tran_descriptor)
 end
 
-function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; out = NULL, mask=NULL, accum=NULL, desc=NULL)
+function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; out = NULL, mask = NULL, accum = NULL, desc = NULL)
     @assert ni > 0 && nj > 0
 
     if out === NULL
@@ -533,9 +510,7 @@ function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; out
     if accum !== NULL
         accum = _get(accum)
     end
-    
-    # TODO: desc
-    
+
     check(
         ccall(
             dlsym(graphblas_lib, "GrB_Matrix_extract"),
@@ -549,24 +524,22 @@ function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; out
     return out
 end
 
-function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = NULL, mask=NULL, accum=NULL, desc=NULL) where I <: Union{UInt64,Int64}
-    return __extract_matrix__(A, pointer(rows), pointer(cols), length(rows), length(cols), out=out, mask=mask, accum=accum, desc=desc)
+function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = NULL, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+    return __extract_matrix__(A, pointer(rows), pointer(cols), length(rows), length(cols), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _extract_matrix(A::GBMatrix, rows::GSpecial, cols::Vector{I}; out = NULL, mask=NULL, accum=NULL, desc=NULL) where I <: Union{UInt64,Int64}
-    return __extract_matrix__(A, rows.p, pointer(cols), size(A, 1), length(cols), out=out, mask=mask, accum=accum, desc=desc)
+function _extract_matrix(A::GBMatrix, rows::GSpecial, cols::Vector{I}; out = NULL, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+    return __extract_matrix__(A, rows.p, pointer(cols), size(A, 1), length(cols), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::GSpecial; out = NULL, mask=NULL, accum=NULL, desc=NULL) where I <: Union{UInt64,Int64}
-    return __extract_matrix__(A, pointer(rows), cols.p, length(rows), size(A, 2), out=out, mask=mask, accum=accum, desc=desc)
+function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::GSpecial; out = NULL, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+    return __extract_matrix__(A, pointer(rows), cols.p, length(rows), size(A, 2), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GSpecial}; mask=NULL, accum=NULL, desc=NULL) where I <: Union{UInt64,Int64}    
+function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}    
     if accum !== NULL
         accum = _get(accum)
     end
-    
-    # TODO: desc
 
     check(
         ccall(
@@ -580,12 +553,10 @@ function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GS
     nothing
 end
 
-function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GSpecial}; mask=NULL, accum=NULL, desc=NULL) where I <: Union{UInt64,Int64}
+function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     if accum !== NULL
         accum = _get(accum)
     end
-    
-    # TODO: desc
 
     check(
         ccall(
@@ -599,12 +570,10 @@ function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GS
     nothing
 end
 
-function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I},GSpecial}, cols::Union{Vector{I},GSpecial}; mask=NULL, accum=NULL, desc=NULL) where I <: Union{UInt64,Int64}
+function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I},GSpecial}, cols::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     if accum !== NULL
         accum = _get(accum)
     end
-    
-    # TODO: desc
 
     check(
         ccall(
@@ -628,3 +597,5 @@ function _free(A::GBMatrix)
             )
         )
 end
+  
+_gb_pointer(m::GBMatrix) = m.p
