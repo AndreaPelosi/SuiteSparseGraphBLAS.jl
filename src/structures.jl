@@ -94,11 +94,18 @@ mutable struct GBMatrix{T <: valid_types}
     GBMatrix{T}() where T = new(C_NULL, j2gtype(T))
 end
 
+mutable struct Descriptor
+    p::Ptr{Cvoid}
+
+    Descriptor() = new()
+end
+
 _gb_pointer(op::GrB_UnaryOp) = op.p
 _gb_pointer(op::GrB_BinaryOp) = op.p
 _gb_pointer(op::GrB_Monoid) = op.p
 _gb_pointer(op::GrB_Semiring) = op.p
 _gb_pointer(op::SelectOperator) = op.p
+_gb_pointer(desc::Descriptor) = desc.p
 
 # default methods operators
 g_operators = nothing
