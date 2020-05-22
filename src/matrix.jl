@@ -346,7 +346,7 @@ function mxm(A::GBMatrix, B::GBMatrix; kwargs...)
 end
 
 """
-    mxv(A::GBMatrix, u::GBVector; kwargs...)
+    mxv(A::GBMatrix, u::GBVector; kwargs...) -> GBVector
 
 Multiply a sparse matrix `A` times a column vector `u`.
 
@@ -591,7 +591,7 @@ Apply a `Unary Operator` to the entries of a matrix `A`.
 ```julia-repl
 julia> A = from_matrix([-1 2; -3 -4]);
 
-julia> out = apply(A, unaryop = Unaryop.ABS)
+julia> apply!(A, unaryop = Unaryop.ABS)
 
 # TODO: insert output
 ```
