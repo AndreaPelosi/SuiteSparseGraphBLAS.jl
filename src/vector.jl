@@ -34,7 +34,7 @@ A combiner Binary Operator can be provided to manage duplicates values. If it is
 function vector_from_lists(I, V; n = nothing, type = NULL, combine = NULL)
     @assert length(I) == length(V) 
     if n == nothing
-        n = max(I...)
+        n = maximum(I)
     end
     if type == NULL
         type = j2gtype(eltype(V))
@@ -46,7 +46,7 @@ function vector_from_lists(I, V; n = nothing, type = NULL, combine = NULL)
         combine = Binaryop.FIRST
     end
     combine_bop = _get(combine, type, type, type)
-    map!(x->x - 1, I, I)
+    I = map(x->x - 1, I)
     v = vector_from_type(type, n)
     GrB_Vector_build(v, I, V, length(V), combine_bop)
     return v
