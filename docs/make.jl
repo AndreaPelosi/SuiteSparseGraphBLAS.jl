@@ -1,3 +1,5 @@
+push!(LOAD_PATH,"../src/")
+
 using Documenter, SuiteSparseGraphBLAS
 
 makedocs(
@@ -12,8 +14,5 @@ makedocs(
 )
 
 deploydocs(
-    target = "build",
-    deps   = nothing,
-    make   = nothing,
-    repo   = "https://github.com/cvdlab/SuiteSparseGraphBLAS.jl"
+    repo = "github.com/cvdlab/SuiteSparseGraphBLAS.jl.git",
 )
