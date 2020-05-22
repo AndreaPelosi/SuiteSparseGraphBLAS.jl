@@ -198,7 +198,7 @@ Returns zero based indices by default.
 function GrB_Vector_extractTuples(v::GBVector{T}) where T
     nvals = GrB_Vector_nvals(v)
     
-    I = Vector{UInt64}(undef, nvals)
+    I = Vector{Int64}(undef, nvals)
     X = Vector{T}(undef, nvals)
     n = Ref(UInt64(nvals))
 
