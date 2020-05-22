@@ -63,4 +63,7 @@ export GraphBLASNoValueException,
 export matrix_from_type, matrix_from_lists, from_matrix, identity, square, findnz, nnz, clear!,
     mxm, mxv, emult, eadd, apply, apply!, select, reduce_vector, reduce_scalar, transpose, kron
 
+# export vector operations
+export vector_from_type, vector_from_lists, from_vector, vxm, reduce
+
 end # end of module
