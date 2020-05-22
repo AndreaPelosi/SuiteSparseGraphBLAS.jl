@@ -68,4 +68,6 @@ export vector_from_type, vector_from_lists, from_vector, vxm, reduce
 
 export @with
 
+export GBMatrix, GBVector
+
 end # end of module

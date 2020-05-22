@@ -9,7 +9,8 @@ makedocs(
     doctest     = false,
     pages       = Any[
 		"Home"								=> "index.md",
-		"Matrix operations"					=> "matrix.md",
+    "Matrix operations"					=> "matrix.md",
+    "Vector operations"					=> "vector.md",
     ]
 )
 

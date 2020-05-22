@@ -1,4 +1,4 @@
-import Base: size, copy, lastindex, setindex!, getindex, show, ==, *, Broadcast.broadcasted, |>
+import Base: size, copy, lastindex, setindex!, getindex, show, ==, *, Broadcast.broadcasted, |>, reduce
 
 _gb_pointer(m::GBVector) = m.p
 

@@ -4,15 +4,16 @@ matrix_from_lists
 from_matrix
 identity
 square
-findnz
-nnz
-clear!
+findnz(::GBMatrix)
+size(::GBMatrix)
+nnz(::GBMatrix)
+clear!(::GBMatrix)
 mxm
 mxv
-emult
-eadd
-apply
-apply!
+emult(::GBMatrix, ::GBMatrix)
+eadd(::GBMatrix, ::GBMatrix)
+apply(::GBMatrix)
+apply!(::GBMatrix)
 select
 reduce_vector
 reduce_scalar
