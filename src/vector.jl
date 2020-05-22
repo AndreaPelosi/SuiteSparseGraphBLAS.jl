@@ -247,9 +247,13 @@ julia> u = from_vector([1, 2, 3, 4]);
 
 julia> v = copy(u);
 
-julia> out = emult(u, v, operator = Binaryop.PLUS)
+julia> emult(u, v, operator = Binaryop.PLUS)
+4-element GBVector{Int64} with 4 stored entries:
+  [1] = 2
+  [2] = 4
+  [3] = 6
+  [4] = 8
 
-# TODO: insert output
 ```
 """
 function emult(u::GBVector, v::GBVector; kwargs...)
@@ -302,9 +306,13 @@ julia> u = from_vector([1, 2, 3, 4]);
 
 julia> v = copy(u);
 
-julia> out = emult(u, v, operator = Binaryop.TIMES)
+julia> emult(u, v, operator = Binaryop.TIMES)
+4-element GBVector{Int64} with 4 stored entries:
+  [1] = 1
+  [2] = 4
+  [3] = 9
+  [4] = 16
 
-# TODO: insert output
 ```
 """
 function eadd(u::GBVector, v::GBVector; kwargs...)
@@ -355,9 +363,11 @@ julia> u = from_vector([1, 2]);
 
 julia> A = from_matrix([1 2; 3 4]);
 
-julia> out = vxm(u, A, semiring = Semirings.PLUS_TIMES)
+julia> vxm(u, A, semiring = Semirings.PLUS_TIMES)
+2-element GBVector{Int64} with 2 stored entries:
+  [1] = 7
+  [2] = 10
 
-# TODO: insert output
 ```
 """
 function vxm(u::GBVector, A::GBMatrix; kwargs...)
@@ -405,9 +415,12 @@ Apply a `Unary Operator` to the entries of a vector `u`, creating a new vector.
 ```julia-repl
 julia> u = from_vector([-1, 2, -3]);
 
-julia> out = apply(A, unaryop = Unaryop.ABS)
+julia> apply(u, unaryop = Unaryop.ABS)
+3-element GBVector{Int64} with 3 stored entries:
+  [1] = 1
+  [2] = 2
+  [3] = 3
 
-# TODO: insert output
 ```
 """
 function apply(u::GBVector; kwargs...)
@@ -451,9 +464,14 @@ Apply a `Unary Operator` to the entries of a vector `u`.
 ```julia-repl
 julia> u = from_vector([-1, 2, -3]);
 
-julia> apply!(A, unaryop = Unaryop.ABS);
+julia> apply!(u, unaryop = Unaryop.ABS);
 
-# TODO: insert output
+julia> u
+3-element GBVector{Int64} with 3 stored entries:
+  [1] = 1
+  [2] = 2
+  [3] = 3
+
 ```
 """
 function apply!(u::GBVector; kwargs...)

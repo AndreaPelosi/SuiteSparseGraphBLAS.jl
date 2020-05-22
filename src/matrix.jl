@@ -349,9 +349,13 @@ julia> A = from_matrix([1 2; 3 4]);
 
 julia> B = copy(A);
 
-julia> out = mxm(A, B, semiring = Semirings.PLUS_TIMES)
+julia> mxm(A, B, semiring = Semirings.PLUS_TIMES)
+2x2 GBMatrix{Int64} with 4 stored entries:
+  [1, 1] = 7
+  [1, 2] = 10
+  [2, 1] = 15
+  [2, 2] = 22
 
-# TODO: insert output
 ```
 """
 function mxm(A::GBMatrix, B::GBMatrix; kwargs...)
@@ -407,9 +411,11 @@ julia> A = from_matrix([1 2; 3 4]);
 
 julia> u = from_vector([1, 2]);
 
-julia> out = mxv(A, u, semiring = Semirings.PLUS_TIMES)
+julia> mxv(A, u, semiring = Semirings.PLUS_TIMES)
+2-element GBVector{Int64} with 2 stored entries:
+  [1] = 5
+  [2] = 11
 
-# TODO: insert output
 ```
 """
 function mxv(A::GBMatrix, u::GBVector; kwargs...)
@@ -466,9 +472,13 @@ julia> A = from_matrix([1 2; 3 4]);
 
 julia> B = copy(A);
 
-julia> out = emult(A, B, operator = Binaryop.PLUS)
+julia> emult(A, B, operator = Binaryop.PLUS)
+2x2 GBMatrix{Int64} with 4 stored entries:
+  [1, 1] = 2
+  [1, 2] = 4
+  [2, 1] = 6
+  [2, 2] = 8
 
-# TODO: insert output
 ```
 """
 function emult(A::GBMatrix, B::GBMatrix; kwargs...)
@@ -527,9 +537,13 @@ julia> A = from_matrix([1 2; 3 4]);
 
 julia> B = copy(A);
 
-julia> out = eadd(A, B, operator = Binaryop.PLUS)
+julia> eadd(A, B, operator = Binaryop.TIMES)
+2x2 GBMatrix{Int64} with 4 stored entries:
+  [1, 1] = 1
+  [1, 2] = 4
+  [2, 1] = 9
+  [2, 2] = 16
 
-# TODO: insert output
 ```
 """
 function eadd(A::GBMatrix, B::GBMatrix; kwargs...)
@@ -583,9 +597,13 @@ Apply a `Unary Operator` to the entries of a matrix `A`, creating a new matrix.
 ```julia-repl
 julia> A = from_matrix([-1 2; -3 -4]);
 
-julia> out = apply(A, unaryop = Unaryop.ABS)
+julia> apply(A, unaryop = Unaryop.ABS)
+2x2 GBMatrix{Int64} with 4 stored entries:
+  [1, 1] = 1
+  [1, 2] = 2
+  [2, 1] = 3
+  [2, 2] = 4
 
-# TODO: insert output
 ```
 """
 function apply(A::GBMatrix; kwargs...)
@@ -633,9 +651,15 @@ Apply a `Unary Operator` to the entries of a matrix `A`.
 ```julia-repl
 julia> A = from_matrix([-1 2; -3 -4]);
 
-julia> apply!(A, unaryop = Unaryop.ABS)
+julia> apply!(A, unaryop = Unaryop.ABS);
 
-# TODO: insert output
+julia> A
+2x2 GBMatrix{Int64} with 4 stored entries:
+  [1, 1] = 1
+  [1, 2] = 2
+  [2, 1] = 3
+  [2, 2] = 4
+
 ```
 """
 function apply!(A::GBMatrix; kwargs...)
@@ -707,9 +731,11 @@ It can be used a `Monoid` as an operator. In both cases the reduction operator m
 ```julia-repl
 julia> A = from_matrix([1 2; 3 4]);
 
-julia> out = reduce_vector(A, operator = Binaryop.PLUS)
+julia> reduce_vector(A, operator = Binaryop.PLUS)
+2-element GBVector{Int64} with 2 stored entries:
+  [1] = 3
+  [2] = 7
 
-# TODO: insert output
 ```
 """
 function reduce_vector(A::GBMatrix; kwargs...)
@@ -759,7 +785,7 @@ Reduce a matrix `A` to a scalar, using the given `Monoid`.
 ```julia-repl
 julia> A = from_matrix([1 2; 3 4]);
 
-julia> out = reduce_scalar(A, monoid = Monoids.PLUS)
+julia> reduce_scalar(A, monoid = Monoids.PLUS)
 10
 ```
 """
@@ -805,9 +831,15 @@ Transpose a matrix `A`.
 ```julia-repl
 julia> A = from_matrix([1 2 3; 4 5 6]);
 
-julia> out = transpose(A)
+julia> transpose(A)
+3x2 GBMatrix{Int64} with 6 stored entries:
+  [1, 1] = 1
+  [1, 2] = 4
+  [2, 1] = 2
+  [2, 2] = 5
+  [3, 1] = 3
+  [3, 2] = 6
 
-#TODO: insert output
 ```
 """
 function transpose(A::GBMatrix; kwargs...)
@@ -855,8 +887,17 @@ Compute the Kronecker product, using the given `Binary Operator`.
 
 # Examples
 ```julia-repl
+julia> A = from_matrix[1 2; 3 4]);
 
-#TODO: insert example
+julia> B = copy(A)
+
+julia> Matrix(kron(A, B, binaryop = Binaryop.TIMES))
+4×4 Array{Int64,2}:
+ 1   2   2   4
+ 3   4   6   8
+ 3   6   4   8
+ 9  12  12  16
+
 ```
 """
 function kron(A::GBMatrix, B::GBMatrix; kwargs...)
