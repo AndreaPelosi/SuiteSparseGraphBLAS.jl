@@ -1,4 +1,5 @@
-import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix, identity, kron, transpose
+import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix, identity, kron, transpose,
+             show
 
 """
     matrix_from_type(type, m, n)
@@ -110,6 +111,17 @@ function Matrix(A::GBMatrix{T}) where T
         end
     end
     return res
+end
+
+function show(io::IO, ::MIME"text/plain", M::GBMatrix{T}) where T
+    s = size(M)
+
+    print(io, "$(Int64(s[1]))x$(Int64(s[2])) GBMatrix{$(T)} ")
+    println(io, "with $(nnz(M)) stored entries:")
+
+    for (i, j, x) in zip(findnz(M)...)
+        println("  [$i, $j] = $x")
+    end
 end
 
 """

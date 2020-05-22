@@ -1,4 +1,4 @@
-import Base: size, copy, lastindex, setindex!, getindex
+import Base: size, copy, lastindex, setindex!, getindex, show
 
 _gb_pointer(m::GBVector) = m.p
 
@@ -69,6 +69,15 @@ function from_vector(V)
         end
     end
     return res
+end
+
+function show(io::IO, ::MIME"text/plain", v::GBVector{T}) where T
+    print(io, "$(Int64(size(v)))-element GBVector{$(T)} ")
+    println(io, "with $(nnz(v)) stored entries:")
+
+    for (i, x) in zip(findnz(v)...)
+        println("  [$i] = $x")
+    end
 end
 
 """
