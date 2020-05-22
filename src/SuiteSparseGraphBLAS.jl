@@ -66,4 +66,6 @@ export matrix_from_type, matrix_from_lists, from_matrix, identity, square, findn
 # export vector operations
 export vector_from_type, vector_from_lists, from_vector, vxm, reduce
 
+export @with
+
 end # end of module
