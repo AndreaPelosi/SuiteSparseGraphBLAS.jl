@@ -1,5 +1,5 @@
 import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix, identity, kron, transpose,
-             show
+             show, ==, *, |>
 
 """
     matrix_from_type(type, m, n)
@@ -123,6 +123,36 @@ function show(io::IO, ::MIME"text/plain", M::GBMatrix{T}) where T
         println("  [$i, $j] = $x")
     end
 end
+
+"""
+    ==(A, B)
+
+Check if two matrices `A` and `B` are equal.
+"""
+function ==(A::GBMatrix{T}, B::GBMatrix{U}) where {T,U}
+    T != U && return false
+
+    Asize = size(A)
+    Anvals = nnz(A)
+
+    Asize == size(B) || return false
+    Anvals == nnz(B) || return false
+
+    @with Binaryop.EQ, Monoids.LAND begin
+        C = emult(A, B, out = matrix_from_type(BOOL, Asize...))
+        eq = reduce_scalar(C)
+    end
+    
+    return eq
+end
+
+*(A::GBMatrix, B::GBMatrix) = mxm(A, B)
+*(A::GBMatrix, u::GBVector) = mxv(A, u)
+
+broadcasted(::typeof(+), A::GBMatrix, B::GBMatrix) = eadd(A, B)
+broadcasted(::typeof(*), A::GBMatrix, B::GBMatrix) = emult(A, B)
+
+|>(A::GBMatrix, op::UnaryOperator) = apply(A, unaryop = op)
 
 """
     size(m::GBMatrix, [dim])

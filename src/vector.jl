@@ -1,4 +1,4 @@
-import Base: size, copy, lastindex, setindex!, getindex, show
+import Base: size, copy, lastindex, setindex!, getindex, show, ==, *, Broadcast.broadcasted, |>
 
 _gb_pointer(m::GBVector) = m.p
 
@@ -79,6 +79,35 @@ function show(io::IO, ::MIME"text/plain", v::GBVector{T}) where T
         println("  [$i] = $x")
     end
 end
+
+"""
+    ==(u, v) -> Bool
+
+Check if two vectors `u` and `v` are equal.
+"""
+function ==(u::GBVector{T}, v::GBVector{U}) where {T, U}
+    T != U && return false
+
+    usize = size(u)
+    unvals = nnz(u)
+
+    usize == size(v) || return false
+    unvals == nnz(v) || return false
+
+    @with Binaryop.EQ, Monoids.LAND begin
+        w = emult(u, v, out=vector_from_type(BOOL, usize))
+        eq = reduce(w)
+    end
+    
+    return eq
+end
+
+*(u::GBVector, A::GBMatrix) = vxm(u, A)
+
+broadcasted(::typeof(+), u::GBVector, v::GBVector) = eadd(u, v)
+broadcasted(::typeof(*), u::GBVector, v::GBVector) = emult(u, v)
+
+|>(A::GBVector, op::UnaryOperator) = apply(A, unaryop = op)
 
 """
     size(v::GBVector)
