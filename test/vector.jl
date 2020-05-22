@@ -20,19 +20,19 @@
 
     # automatic type inference, given size
     I, X = [1,2,4,5], Int64[1,2,3,4]
-    v = SG.vector_from_lists(I, X, size = 10)
+    v = SG.vector_from_lists(I, X, n = 10)
     @test v.type == INT64
     @test size(v) == 10
 
     # passed type parameter
     I, X = [1,2,4,5], Int8[1,2,3,4]
-    v = SG.vector_from_lists(I, X, size = 10, type = INT32)
+    v = SG.vector_from_lists(I, X, n = 10, type = INT32)
     @test v.type == INT32
     @test size(v) == 10
 
     # combine parameter - default (FIRST)
     I, X = [1,1,4,5], Int8[1,2,3,4]
-    v = SG.vector_from_lists(I, X, size = 10)
+    v = SG.vector_from_lists(I, X, n = 10)
     @test v.type == INT8
     @test size(v) == 10
     @test v[1] == 1
