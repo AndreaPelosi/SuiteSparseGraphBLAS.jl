@@ -98,7 +98,7 @@ Store elements from tuples into a vector.
 function GrB_Vector_build(w::GBVector{T}, I::Vector{U}, X::Vector{T}, nvals::U, dup::GrB_BinaryOp) where {T,U <: Union{Int64,UInt64}}
     I_ptr = pointer(I)
     X_ptr = pointer(X)
-    fn_name = "GrB_Vector_build_" * suffix(T)
+    fn_name = "GrB_Vector_build_" * _gb_type(T).name
 
     check(
         ccall(
@@ -117,7 +117,7 @@ Set one element of a vector to a given value, w[i] = x.
 
 """
 function GrB_Vector_setElement(w::GBVector{T}, x::T, i::Union{Int64,UInt64}) where T
-    fn_name = "GrB_Vector_setElement_" * suffix(T)
+    fn_name = "GrB_Vector_setElement_" * _gb_type(T).name
     check(
         ccall(
             dlsym(graphblas_lib, fn_name),
@@ -172,7 +172,7 @@ Else return `GrB_Info` error code.
 
 """
 function GrB_Vector_extractElement(v::GBVector{T}, i::Union{Int64,UInt64}) where T
-    fn_name = "GrB_Vector_extractElement_" * suffix(T)
+    fn_name = "GrB_Vector_extractElement_" * _gb_type(T).name
 
     element = Ref(T(0))
     check(
@@ -202,7 +202,7 @@ function GrB_Vector_extractTuples(v::GBVector{T}) where T
     X = Vector{T}(undef, nvals)
     n = Ref(UInt64(nvals))
 
-    fn_name = "GrB_Vector_extractTuples_" * suffix(T)
+    fn_name = "GrB_Vector_extractTuples_" * _gb_type(T).name
     check(
         ccall(
             dlsym(graphblas_lib, fn_name),

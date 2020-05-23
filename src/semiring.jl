@@ -1,7 +1,7 @@
 import Base: show
 
 function semiring(add::Monoid, mult::BinaryOperator; name::Union{Symbol, Nothing} = nothing)
-    if name != nothing
+    if name !== nothing
         if hasproperty(Semirings, name)
             sem = getproperty(Semirings, name)
         else
@@ -18,9 +18,9 @@ end
 function _get(semiring::Semiring, types...)
     ztype, xtype, ytype = types
     index = findfirst(sem -> sem.xtype == xtype && sem.ytype == ytype && sem.ztype == ztype, semiring.impl)
-    if index == nothing
+    if index === nothing
         # create a semiring with given types
-        if semiring.monoid != nothing && semiring.binaryop != nothing
+        if semiring.monoid !== nothing && semiring.binaryop !== nothing
             # user defined semiring
             bop = _get(semiring.binaryop, ztype, xtype, ytype)
             mon = _get(semiring.monoid, ztype)
@@ -40,7 +40,7 @@ function load_builtin_semiring()
     function load(lst; ztype = NULL)
         for op in lst
             bpn = split(op, "_")
-            type = str2gtype(string(bpn[end]))
+            type = str2gtype[string(bpn[end])]
             
             semiring_name = Symbol(join(bpn[2:end-1], "_"))
 

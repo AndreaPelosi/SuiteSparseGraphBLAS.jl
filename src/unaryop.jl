@@ -1,8 +1,10 @@
 import Base: show
 
 # create new unary op from function fun, called s
-function unaryop(fun::Function; xtype::GType = NULL, ztype::GType = NULL, name::Union{Symbol, Nothing} = nothing)
-    if name != nothing
+function unaryop(fun::Function; xtype = nothing, ztype = nothing, name::Union{Symbol, Nothing} = nothing)
+    x_gb_type = _gb_type(xtype)
+    z_gb_type = _gb_type(ztype)
+    if name !== nothing
         if hasproperty(Unaryop, name)
             uop = getproperty(Unaryop, name)
         else
@@ -11,11 +13,11 @@ function unaryop(fun::Function; xtype::GType = NULL, ztype::GType = NULL, name::
             @eval(Unaryop, export $name)
         end
     else
-        uop = UnaryOperator(fun, "$(string(name))_$(ztype.name)")
+        uop = UnaryOperator(fun, "$(string(name))_$(z_gb_type.name)")
     end
-    if xtype != NULL && ztype != NULL
-        if findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.impl) == nothing
-            op = GrB_UnaryOp_new(fun, ztype, xtype)
+    if xtype !== nothing && ztype !== nothing
+        if findfirst(op->op.xtype === x_gb_type && op.ztype === z_gb_type, uop.impl) === nothing
+            op = GrB_UnaryOp_new(fun, z_gb_type, x_gb_type)
             push!(uop.impl, op)
         end
     end
@@ -33,7 +35,7 @@ function load_builtin_unaryop()
 
     for op in cat(grb_uop, gxb_uop, dims = 1)
         opn = split(op, "_")
-        type = str2gtype(string(opn[end]))
+        type = str2gtype[string(opn[end])]
         
         unaryop_name = Symbol(join(opn[2:end - 1]))
         if hasproperty(Unaryop, unaryop_name)
@@ -51,8 +53,8 @@ end
 # get GrB_UnaryOp associated at UnaryOperator with a specific input domain type
 function _get(uop::UnaryOperator, types...)
     ztype, xtype = types
-    index = findfirst(op->op.xtype == xtype && op.ztype == ztype, uop.impl)
-    if index == nothing
+    index = findfirst(op->op.xtype === xtype && op.ztype === ztype, uop.impl)
+    if index === nothing
         op = GrB_UnaryOp_new(uop.fun, ztype, xtype)
         push!(uop.impl, op)
         return op

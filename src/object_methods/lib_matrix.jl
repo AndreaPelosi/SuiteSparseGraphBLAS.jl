@@ -28,7 +28,7 @@ function GrB_Matrix_build(C::GBMatrix{T}, I::Vector{U}, J::Vector{U}, X::Vector{
     I_ptr = pointer(I)
     J_ptr = pointer(J)
     X_ptr = pointer(X)
-    fn_name = "GrB_Matrix_build_" * suffix(T)
+    fn_name = "GrB_Matrix_build_" * _gb_type(T).name
     check(
         ccall(
             dlsym(graphblas_lib, fn_name),
@@ -147,7 +147,7 @@ Set one element of a matrix to a given value, C[I][J] = X.
 
 """
 function GrB_Matrix_setElement(C::GBMatrix{T}, X::T, I::U, J::U) where {T,U <: Integer}
-    fn_name = "GrB_Matrix_setElement_" * suffix(T)
+    fn_name = "GrB_Matrix_setElement_" * _gb_type(T).name
     check(
         ccall(
             dlsym(graphblas_lib, fn_name),
@@ -202,7 +202,7 @@ Else return `GrB_Info` error code.
 
 """
 function GrB_Matrix_extractElement(A::GBMatrix{T}, row_index::U, col_index::U) where {T,U <: Integer}
-    fn_name = "GrB_Matrix_extractElement_" * suffix(T)
+    fn_name = "GrB_Matrix_extractElement_" * _gb_type(T).name
 
     element = Ref(T(0))
     check(
@@ -233,7 +233,7 @@ function GrB_Matrix_extractTuples(A::GBMatrix{T}) where T
     vals = Vector{T}(undef, nvals)
     n = Ref(UInt64(nvals))
 
-    fn_name = "GrB_Matrix_extractTuples_" * suffix(T)
+    fn_name = "GrB_Matrix_extractTuples_" * _gb_type(T).name
     check(
         ccall(
             dlsym(graphblas_lib, fn_name),

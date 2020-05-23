@@ -1,8 +1,8 @@
 import Base: show
 
 # create new unary op from function fun, called s
-function binaryop(fun::Function; xtype::GType = NULL, ztype::GType = NULL, ytype::GType = NULL, name::Union{Symbol, Nothing} = nothing)
-    if name != nothing
+function binaryop(fun::Function; xtype = nothing, ztype = nothing, ytype = nothing, name::Union{Symbol, Nothing} = nothing)
+    if name !== nothing
         if hasproperty(Binaryop, name)
             bop = getproperty(Binaryop, name)
         else
@@ -13,9 +13,12 @@ function binaryop(fun::Function; xtype::GType = NULL, ztype::GType = NULL, ytype
     else
         bop = BinaryOperator(fun, "$(string(name))_$(ztype.name)")
     end
-    if xtype != NULL && ztype != NULL && ytype != NULL
-        if findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, bop.impl) == nothing
-            op = GrB_BinaryOp_new(fun, ztype, xtype, ytype)
+    if xtype !== nothing && ztype !== nothing && ytype !== nothing
+        x_gb_type = _gb_type(xtype)
+        z_gb_type = _gb_type(ztype)
+        y_gb_type = _gb_type(ytype)
+        if findfirst(op->op.xtype === x_gb_type && op.ztype === z_gb_type && op.ytype === y_gb_type, bop.impl) === nothing
+            op = GrB_BinaryOp_new(fun, z_gb_type, x_gb_type, y_gb_type)
             push!(bop.impl, op)
         end    
     end
@@ -27,7 +30,7 @@ function load_builtin_binaryop()
     function load(lst; ztype = nothing)
         for op in lst
             bpn = split(op, "_")
-            type = str2gtype(string(bpn[end]))
+            type = str2gtype[string(bpn[end])]
             
             binaryop_name = Symbol(join(bpn[2:end - 1]))
             if hasproperty(Binaryop, binaryop_name)
@@ -38,7 +41,7 @@ function load_builtin_binaryop()
                 @eval(Binaryop, export $binaryop_name)
             end
             
-            push!(binaryop.impl, GrB_BinaryOp(op, ztype == nothing ? type : ztype, type, type))
+            push!(binaryop.impl, GrB_BinaryOp(op, ztype === nothing ? type : ztype, type, type))
         end
     end
 
@@ -62,9 +65,9 @@ end
 # get GrB_BinaryOp associated at BinaryOperation with a specific input domain type
 function _get(binary_op::BinaryOperator, types...)
     ztype, xtype, ytype = types
-    index = findfirst(op->op.xtype == xtype && op.ztype == ztype && op.ytype == ytype, binary_op.impl)
-    if index == nothing
-        if binary_op.fun != nothing
+    index = findfirst(op->op.xtype === xtype && op.ztype === ztype && op.ytype === ytype, binary_op.impl)
+    if index === nothing
+        if binary_op.fun !== nothing
             # user defined binary op
             bop = GrB_BinaryOp_new(binary_op.fun, ztype, xtype, ytype)
             push!(binary_op.impl, bop)

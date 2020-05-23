@@ -1,9 +1,9 @@
 import Base: show
 
 # create new monoid from binary operation and identity value
-function monoid(bin_op::BinaryOperator, identity::T; name::Union{Symbol, Nothing} = nothing) where T <: valid_types
-    domain = j2gtype(T)
-    if name != nothing
+function monoid(bin_op::BinaryOperator, identity::T; name::Union{Symbol, Nothing} = nothing) where T
+    domain = _gb_type(T)
+    if name !== nothing
         if hasproperty(Monoids, name)
             monoid = getproperty(Monoids, name)
         else
@@ -15,7 +15,7 @@ function monoid(bin_op::BinaryOperator, identity::T; name::Union{Symbol, Nothing
         monoid = Monoids(string(name))
     end
     index = findfirst(mon -> mon.domain == domain, monoid.impl)
-    if index == nothing
+    if index === nothing
         # create a new monoid
         bop = _get(bin_op, domain, domain, domain)
         mon = GrB_Monoid_new(bop, identity)
@@ -38,7 +38,7 @@ function load_builtin_monoid()
     function load(lst)
         for op in lst
             bpn = split(op, "_")
-            type = str2gtype(string(bpn[end-1]))
+            type = str2gtype[string(bpn[end-1])]
             
             monoid_name = Symbol(join(bpn[2:end-2], "_"))
             if hasproperty(Monoids, monoid_name)
@@ -68,10 +68,10 @@ end
 
 function GrB_Monoid_new(binary_op::GrB_BinaryOp, identity::T) where T
     monoid = GrB_Monoid()
-    monoid.domain = j2gtype(T)
+    monoid.domain = _gb_type(T)
 
     monoid_ptr = pointer_from_objref(monoid)
-    fn_name = "GrB_Monoid_new_" * suffix(T)
+    fn_name = "GrB_Monoid_new_" * _gb_type(T).name
 
     check(
         ccall(

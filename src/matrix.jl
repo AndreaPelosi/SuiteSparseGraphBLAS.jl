@@ -7,15 +7,15 @@ import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix
 Create an empty GBMatrix of size m×n from the given type `type`.
 
 """
-function matrix_from_type(type::GType, m, n)
-    r = GBMatrix{type.jtype}()
-    GrB_Matrix_new(r, type, m, n)
+function matrix_from_type(type, m, n)
+    r = GBMatrix{type}()
+    GrB_Matrix_new(r, _gb_type(type), m, n)
     finalizer(_free, r)
     return r
 end
 
 """
-    matrix_from_lists(I, J, V; m = nothing, n = nothing, type = NULL, combine = NULL)
+    matrix_from_lists(I, J, V; m = nothing, n = nothing, type = nothing, combine = nothing)
 
 Create a new GBMatrix from the given lists of row indices, column indices and values.
 If `m` and `n` are not provided, they are computed from the max values of the row and column indices lists, respectively.
@@ -32,7 +32,7 @@ A combiner Binary Operator can be provided to manage duplicates values. If it is
 - `combine`: the `BinaryOperator` which assembles any duplicate entries with identical indices.
 
 """
-function matrix_from_lists(I, J, V; m = nothing, n = nothing, type = NULL, combine = NULL)
+function matrix_from_lists(I, J, V; m = nothing, n = nothing, type = nothing, combine = nothing)
     @assert length(I) == length(J) == length(V)
     if m === nothing
         m = maximum(I)
@@ -40,17 +40,18 @@ function matrix_from_lists(I, J, V; m = nothing, n = nothing, type = NULL, combi
     if n === nothing
         n = maximum(J)
     end
-    if type === NULL
-        type = j2gtype(eltype(V))
-    elseif type.jtype != eltype(V)
-        V = convert.(type.jtype, V)
+    if type === nothing
+        type = eltype(V)
+    elseif type !== eltype(V)
+        V = convert.(type, V)
     end
+    gb_type = _gb_type(type)
     m = matrix_from_type(type, m, n)
 
-    if combine === NULL
+    if combine === nothing
         combine = Binaryop.FIRST
     end
-    combine_bop = _get(combine, type, type, type)
+    combine_bop = _get(combine, gb_type, gb_type, gb_type)
     I = map(x->x - 1, I)
     J = map(x->x - 1, J)
     GrB_Matrix_build(m, I, J, V, length(V), combine_bop)
@@ -65,7 +66,7 @@ Create a GBMatrix from the given Matrix `m`.
 """
 function from_matrix(m)
     r, c = size(m)
-    res = matrix_from_type(j2gtype(eltype(m)), r, c)
+    res = matrix_from_type(eltype(m), r, c)
 
     i, j = 1, 1
     for v in m
@@ -90,7 +91,7 @@ Create an identity GBMatrix of size n×n with the given type `type`.
 function identity(type, n)
     res = matrix_from_type(type, n, n)
     for i in 1:n
-        res[i,i] = type.one
+        res[i,i] = one(type)
     end
     return res
 end
@@ -139,7 +140,7 @@ function ==(A::GBMatrix{T}, B::GBMatrix{U}) where {T,U}
     Anvals == nnz(B) || return false
 
     @with Binaryop.EQ, Monoids.LAND begin
-        C = emult(A, B, out = matrix_from_type(BOOL, Asize...))
+        C = emult(A, B, out = matrix_from_type(Bool, Asize...))
         eq = reduce_scalar(C)
     end
     
@@ -202,13 +203,13 @@ function square(m::GBMatrix)
 end
 
 """
-    copy(m::GBMatrix)
+    copy(m::GBMatrix{T})
 
-Create a copy of m.
+Create a copy of `m`.
 
 """
-function copy(m::GBMatrix)
-    cpy = matrix_from_type(m.type, size(m)...)
+function copy(m::GBMatrix{T}) where T
+    cpy = matrix_from_type(T, size(m)...)
     GrB_Matrix_dup(cpy, m)
     return cpy
 end
@@ -286,10 +287,10 @@ function setindex!(m::GBMatrix{T}, value, i::Integer, j::Integer) where T
     GrB_Matrix_setElement(m, value, i - 1, j - 1)
 end
 
-setindex!(m::GBMatrix, value, i::Colon, j::Integer) = _assign_col!(m, value, j - 1, GrB_ALL)
-setindex!(m::GBMatrix, value, i::Integer, j::Colon) = _assign_row!(m, value, i - 1, GrB_ALL)
+setindex!(m::GBMatrix, value, i::Colon, j::Integer) = _assign_col!(m, value, j - 1, ALL)
+setindex!(m::GBMatrix, value, i::Integer, j::Colon) = _assign_row!(m, value, i - 1, ALL)
 setindex!(m::GBMatrix, value, i::Colon, j::Colon) = 
-    _assign_matrix!(m, value, GrB_ALL, GrB_ALL)
+    _assign_matrix!(m, value, ALL, ALL)
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Integer) = 
     _assign_col!(m, value, j - 1, _zero_based_indexes(i))
 setindex!(m::GBMatrix, value, i::Integer, j::Union{UnitRange,Vector}) = 
@@ -297,34 +298,34 @@ setindex!(m::GBMatrix, value, i::Integer, j::Union{UnitRange,Vector}) =
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Union{UnitRange,Vector}) =
     _assign_matrix!(m, value, _zero_based_indexes(i), _zero_based_indexes(j))
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Colon) =
-    _assign_matrix!(m, value, _zero_based_indexes(i), GrB_ALL)
+    _assign_matrix!(m, value, _zero_based_indexes(i), ALL)
 setindex!(m::GBMatrix, value, i::Colon, j::Union{UnitRange,Vector}) =
-    _assign_matrix!(m, value, GrB_ALL, _zero_based_indexes(j))
+    _assign_matrix!(m, value, ALL, _zero_based_indexes(j))
 
 
-function getindex(m::GBMatrix, i::Integer, j::Integer)
+function getindex(m::GBMatrix{T}, i::Integer, j::Integer) where T
     try
         return GrB_Matrix_extractElement(m, i - 1, j - 1)
     catch e
         if e isa GraphBLASNoValueException
-            return m.type.zero
+            return zero(T)
         else
             rethrow(e)
         end
     end
 end
 
-getindex(m::GBMatrix, i::Colon, j::Integer) = _extract_col(m, j - 1, GrB_ALL)
-getindex(m::GBMatrix, i::Integer, j::Colon) = _extract_row(m, i - 1, GrB_ALL)
+getindex(m::GBMatrix, i::Colon, j::Integer) = _extract_col(m, j - 1, ALL)
+getindex(m::GBMatrix, i::Integer, j::Colon) = _extract_row(m, i - 1, ALL)
 getindex(m::GBMatrix, i::Colon, j::Colon) = copy(m)
 getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Integer) = _extract_col(m, j - 1, _zero_based_indexes(i))
 getindex(m::GBMatrix, i::Integer, j::Union{UnitRange,Vector}) = _extract_row(m, i - 1, _zero_based_indexes(j))
 getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Union{UnitRange,Vector}) =
     _extract_matrix(m, _zero_based_indexes(i), _zero_based_indexes(j))
 getindex(m::GBMatrix, i::Union{UnitRange,Vector}, j::Colon) =
-    _extract_matrix(m, _zero_based_indexes(i), GrB_ALL)
+    _extract_matrix(m, _zero_based_indexes(i), ALL)
 getindex(m::GBMatrix, i::Colon, j::Union{UnitRange,Vector}) =
-    _extract_matrix(m, GrB_ALL, _zero_based_indexes(j))
+    _extract_matrix(m, ALL, _zero_based_indexes(j))
 
 _zero_based_indexes(i::Vector) = map!(x->x - 1, i, i)
 _zero_based_indexes(i::UnitRange) = collect(i .- 1)
@@ -358,7 +359,7 @@ julia> mxm(A, B, semiring = Semirings.PLUS_TIMES)
 
 ```
 """
-function mxm(A::GBMatrix, B::GBMatrix; kwargs...)
+function mxm(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
     rowA, colA = size(A)
     rowB, colB = size(B)
     @assert colA == rowB
@@ -366,7 +367,7 @@ function mxm(A::GBMatrix, B::GBMatrix; kwargs...)
     out, semiring, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = matrix_from_type(A.type, rowA, colB)
+        out = matrix_from_type(T, rowA, colB)
     end
 
     if semiring === NULL
@@ -418,14 +419,14 @@ julia> mxv(A, u, semiring = Semirings.PLUS_TIMES)
 
 ```
 """
-function mxv(A::GBMatrix, u::GBVector; kwargs...)
+function mxv(A::GBMatrix{T}, u::GBVector{U}; kwargs...) where {T,U}
     rowA, colA = size(A)
     @assert colA == size(u)
 
     out, semiring, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = vector_from_type(A.type, rowA)
+        out = vector_from_type(T, rowA)
     end
 
     if semiring === NULL
@@ -481,14 +482,14 @@ julia> emult(A, B, operator = Binaryop.PLUS)
 
 ```
 """
-function emult(A::GBMatrix, B::GBMatrix; kwargs...)
+function emult(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
     # operator: can be binaryop, monoid, semiring
     @assert size(A) == size(B)
 
     out, operator, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = matrix_from_type(A.type, size(A)...)
+        out = matrix_from_type(T, size(A)...)
     end
 
     if operator === NULL
@@ -546,14 +547,14 @@ julia> eadd(A, B, operator = Binaryop.TIMES)
 
 ```
 """
-function eadd(A::GBMatrix, B::GBMatrix; kwargs...)
+function eadd(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
     # operator: can be binaryop, monoid and semiring
     @assert size(A) == size(B)
 
     out, operator, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = matrix_from_type(A.type, size(A)...)
+        out = matrix_from_type(T, size(A)...)
     end
 
     if operator === NULL
@@ -606,11 +607,11 @@ julia> apply(A, unaryop = Unaryop.ABS)
 
 ```
 """
-function apply(A::GBMatrix; kwargs...)
+function apply(A::GBMatrix{T}; kwargs...) where T
     out, unaryop, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = matrix_from_type(A.type, size(A)...)
+        out = matrix_from_type(T, size(A)...)
     end
 
     if unaryop === NULL
@@ -688,11 +689,11 @@ julia> A = from_matrix([1 2; 3 4]);
 # TODO: insert example
 ```
 """
-function select(A::GBMatrix, op::SelectOperator; kwargs...)
+function select(A::GBMatrix{T}, op::SelectOperator; kwargs...) where T
     out, thunk, mask, accum, desc = __get_args(kwargs)
     
     if out === NULL
-        out = matrix_from_type(A.type, size(A)...)
+        out = matrix_from_type(T, size(A)...)
     end
 
     if accum === NULL
@@ -738,12 +739,12 @@ julia> reduce_vector(A, operator = Binaryop.PLUS)
 
 ```
 """
-function reduce_vector(A::GBMatrix; kwargs...)
+function reduce_vector(A::GBMatrix{T}; kwargs...) where T
     out, operator, mask, accum, desc = __get_args(kwargs)
     
     # operator: can be binary op or monoid
     if out === NULL
-        out = vector_from_type(A.type, size(A, 1))
+        out = vector_from_type(T, size(A, 1))
     end
 
     if operator === NULL
@@ -801,11 +802,11 @@ function reduce_scalar(A::GBMatrix{T}; kwargs...) where T
         accum = _get(accum)
     end
     
-    scalar = Ref(T(0))
+    scalar = Ref(zero(T))
     
     check(
         ccall(
-            dlsym(graphblas_lib, "GrB_Matrix_reduce_" * suffix(T)),
+            dlsym(graphblas_lib, "GrB_Matrix_reduce_" * _gb_type(T).name),
             Cint,
             (Ptr{T}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
             scalar, _gb_pointer(accum), _gb_pointer(monoid_impl), _gb_pointer(A), _gb_pointer(desc)
@@ -842,11 +843,11 @@ julia> transpose(A)
 
 ```
 """
-function transpose(A::GBMatrix; kwargs...)
+function transpose(A::GBMatrix{T}; kwargs...) where T
     out, _, mask, accum, desc = __get_args(kwargs)
     
     if out === NULL
-        out = matrix_from_type(A.type, reverse(size(A))...)
+        out = matrix_from_type(T, reverse(size(A))...)
     end
 
     if accum !== NULL
@@ -900,11 +901,11 @@ julia> Matrix(kron(A, B, binaryop = Binaryop.TIMES))
 
 ```
 """
-function kron(A::GBMatrix, B::GBMatrix; kwargs...)
+function kron(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
     out, binaryop, mask, accum, desc = __get_args(kwargs)
     
     if out === NULL
-        out = matrix_from_type(A.type, size(A) .* size(B)...)
+        out = matrix_from_type(T, size(A) .* size(B)...)
     end
 
     if binaryop === NULL
@@ -930,11 +931,11 @@ function kron(A::GBMatrix, B::GBMatrix; kwargs...)
 end
 
 
-function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = NULL, mask = NULL, accum = NULL, desc = NULL)
+function __extract_col__(A::GBMatrix{T}, col, pointer_rows, ni; out = NULL, mask = NULL, accum = NULL, desc = NULL) where T
     @assert ni > 0
 
     if out === NULL
-        out = vector_from_type(A.type, ni)
+        out = vector_from_type(T, ni)
     end
 
     if accum !== NULL
@@ -954,7 +955,7 @@ function __extract_col__(A::GBMatrix, col, pointer_rows, ni; out = NULL, mask = 
     return out
 end
 
-function _extract_col(A::GBMatrix, col, rows::GSpecial; out = NULL, mask = NULL, accum = NULL, desc = NULL)
+function _extract_col(A::GBMatrix, col, rows::GAllTypes; out = NULL, mask = NULL, accum = NULL, desc = NULL)
     return __extract_col__(A, col, rows.p, size(A, 1), out = out, mask = mask, accum = accum, desc = desc)
 end
 
@@ -967,11 +968,11 @@ function _extract_row(A::GBMatrix, row, cols; out = NULL, mask = NULL, accum = N
     return _extract_col(A, row, cols, out = out, mask = mask, accum = accum, desc = tran_descriptor)
 end
 
-function __extract_matrix__(A::GBMatrix, pointer_rows, pointer_cols, ni, nj; out = NULL, mask = NULL, accum = NULL, desc = NULL)
+function __extract_matrix__(A::GBMatrix{T}, pointer_rows, pointer_cols, ni, nj; out = NULL, mask = NULL, accum = NULL, desc = NULL) where T
     @assert ni > 0 && nj > 0
 
     if out === NULL
-        out = matrix_from_type(A.type, ni, nj)
+        out = matrix_from_type(T, ni, nj)
     end
 
     if accum !== NULL
@@ -995,15 +996,15 @@ function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::Vector{I}; out = NU
     return __extract_matrix__(A, pointer(rows), pointer(cols), length(rows), length(cols), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _extract_matrix(A::GBMatrix, rows::GSpecial, cols::Vector{I}; out = NULL, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+function _extract_matrix(A::GBMatrix, rows::GAllTypes, cols::Vector{I}; out = NULL, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     return __extract_matrix__(A, rows.p, pointer(cols), size(A, 1), length(cols), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::GSpecial; out = NULL, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+function _extract_matrix(A::GBMatrix, rows::Vector{I}, cols::GAllTypes; out = NULL, mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     return __extract_matrix__(A, pointer(rows), cols.p, length(rows), size(A, 2), out = out, mask = mask, accum = accum, desc = desc)
 end
 
-function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}    
+function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GAllTypes}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}    
     if accum !== NULL
         accum = _get(accum)
     end
@@ -1020,7 +1021,7 @@ function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GS
     nothing
 end
 
-function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GAllTypes}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     if accum !== NULL
         accum = _get(accum)
     end
@@ -1037,7 +1038,7 @@ function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GS
     nothing
 end
 
-function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I},GSpecial}, cols::Union{Vector{I},GSpecial}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
+function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I},GAllTypes}, cols::Union{Vector{I},GAllTypes}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     if accum !== NULL
         accum = _get(accum)
     end

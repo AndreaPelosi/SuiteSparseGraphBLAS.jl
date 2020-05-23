@@ -82,7 +82,7 @@ function load_global(str)
 end
 
 function gbtype_from_jtype(T::DataType)
-    return load_global("GrB_" * suffix(T))
+    return load_global("GrB_" * _gb_type(T).name)
 end
 
 function __restore__(old_op)

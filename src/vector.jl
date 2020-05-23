@@ -9,8 +9,8 @@ Create an empty GBVector of size `n` from the given type `type`.
 
 """
 function vector_from_type(type, n)
-    v = GBVector{type.jtype}()
-    GrB_Vector_new(v, type, n)
+    v = GBVector{type}()
+    GrB_Vector_new(v, _gb_type(type), n)
     finalizer(_free, v)
     return v
 end
@@ -31,21 +31,22 @@ A combiner Binary Operator can be provided to manage duplicates values. If it is
 - `combine`: the `BinaryOperator` which assembles any duplicate entries with identical indices.
 
 """
-function vector_from_lists(I, V; n = nothing, type = NULL, combine = NULL)
+function vector_from_lists(I, V; n = nothing, type = nothing, combine = nothing)
     @assert length(I) == length(V) 
-    if n == nothing
+    if n === nothing
         n = maximum(I)
     end
-    if type == NULL
-        type = j2gtype(eltype(V))
-    elseif type.jtype != eltype(V)
-        V = convert.(type.jtype, V)
+    if type === nothing
+        type = eltype(V)
+    elseif type != eltype(V)
+        V = convert.(type, V)
     end
+    gb_type = _gb_type(type)
 
-    if combine == NULL
+    if combine === nothing
         combine = Binaryop.FIRST
     end
-    combine_bop = _get(combine, type, type, type)
+    combine_bop = _get(combine, gb_type, gb_type, gb_type)
     I = map(x->x - 1, I)
     v = vector_from_type(type, n)
     GrB_Vector_build(v, I, V, length(V), combine_bop)
@@ -61,7 +62,7 @@ Create a GBVector from the given Vector `m`.
 function from_vector(V)
     size = length(V)
     @assert size > 0
-    res = vector_from_type(j2gtype(eltype(V)), size)
+    res = vector_from_type(eltype(V), size)
     
     for (i, v) in enumerate(V)
         if !iszero(V[i])
@@ -85,7 +86,7 @@ end
 
 Check if two vectors `u` and `v` are equal.
 """
-function ==(u::GBVector{T}, v::GBVector{U}) where {T, U}
+function ==(u::GBVector{T}, v::GBVector{U}) where {T,U}
     T != U && return false
 
     usize = size(u)
@@ -95,7 +96,7 @@ function ==(u::GBVector{T}, v::GBVector{U}) where {T, U}
     unvals == nnz(v) || return false
 
     @with Binaryop.EQ, Monoids.LAND begin
-        w = emult(u, v, out=vector_from_type(BOOL, usize))
+        w = emult(u, v, out = vector_from_type(Bool, usize))
         eq = reduce(w)
     end
     
@@ -159,7 +160,7 @@ julia> findnz(v)
 """
 function findnz(v::GBVector)
     I, V = GrB_Vector_extractTuples(v)
-    map!(x -> x+1, I, I)
+    map!(x->x + 1, I, I)
     return I, V
 end
 
@@ -169,8 +170,8 @@ end
 Create a copy of `v`.
 
 """
-function copy(v::GBVector)
-    cpy = vector_from_type(v.type, size(v))
+function copy(v::GBVector{T}) where T
+    cpy = vector_from_type(T, size(v))
     GrB_Vector_dup(cpy, v)
     return cpy
 end
@@ -208,7 +209,7 @@ function setindex!(v::GBVector{T}, value, i::Integer) where T
 end
 
 setindex!(v::GBVector, value, i::Union{UnitRange,Vector}) = _assign!(v, value, _zero_based_indexes(i))
-setindex!(v::GBVector, value, ::Colon) = _assign!(v, value, GrB_ALL)
+setindex!(v::GBVector, value, ::Colon) = _assign!(v, value, ALL)
 
 function getindex(v::GBVector, i::Integer)
     try
@@ -256,12 +257,12 @@ julia> emult(u, v, operator = Binaryop.PLUS)
 
 ```
 """
-function emult(u::GBVector, v::GBVector; kwargs...)
+function emult(u::GBVector{T}, v::GBVector{U}; kwargs...) where {T,U}
     out, operator, mask, accum, desc = __get_args(kwargs)
     
     # operator: can be binary op, monoid and semiring
     if out === NULL
-        out = vector_from_type(u.type, size(u))
+        out = vector_from_type(T, size(u))
     end
 
     if operator === NULL
@@ -315,12 +316,12 @@ julia> emult(u, v, operator = Binaryop.TIMES)
 
 ```
 """
-function eadd(u::GBVector, v::GBVector; kwargs...)
+function eadd(u::GBVector{T}, v::GBVector{U}; kwargs...) where {T,U}
     out, operator, mask, accum, desc = __get_args(kwargs)
 
     # operator: can be binary op, monoid and semiring
     if out === NULL
-        out = vector_from_type(u.type, size(u))
+        out = vector_from_type(T, size(u))
     end
 
     if operator === NULL
@@ -370,14 +371,14 @@ julia> vxm(u, A, semiring = Semirings.PLUS_TIMES)
 
 ```
 """
-function vxm(u::GBVector, A::GBMatrix; kwargs...)
+function vxm(u::GBVector{T}, A::GBMatrix{U}; kwargs...) where {T,U}
     rowA, colA = size(A)
     @assert size(u) == rowA
 
     out, semiring, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = vector_from_type(u.type, colA)
+        out = vector_from_type(T, colA)
     end
 
     if semiring === NULL
@@ -423,11 +424,11 @@ julia> apply(u, unaryop = Unaryop.ABS)
 
 ```
 """
-function apply(u::GBVector; kwargs...)
+function apply(u::GBVector{T}; kwargs...) where T
     out, unaryop, mask, accum, desc = __get_args(kwargs)
     
     if out === NULL
-        out = vector_from_type(u.type, size(u))
+        out = vector_from_type(T, size(u))
     end
 
     if unaryop === NULL
@@ -507,11 +508,11 @@ function reduce(u::GBVector{T}; kwargs...) where T
     end
     monoid_impl = _get(monoid, u.type)
 
-    scalar = Ref(T(0))
+    scalar = Ref(zero(T))
 
     check(
         ccall(
-            dlsym(graphblas_lib, "GrB_Vector_reduce_" * suffix(T)),
+            dlsym(graphblas_lib, "GrB_Vector_reduce_" * _gb_type(T).name),
             Cint,
             (Ptr{T}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
             scalar, _gb_pointer(accum), _gb_pointer(monoid_impl), _gb_pointer(u), _gb_pointer(desc)
@@ -521,14 +522,14 @@ function reduce(u::GBVector{T}; kwargs...) where T
     return scalar[]
 end
 
-function _extract(u::GBVector, indices::Vector{I}; kwargs...) where I <: Union{UInt64,Int64}
+function _extract(u::GBVector{T}, indices::Vector{I}; kwargs...) where {T, I <: Union{UInt64,Int64}}
     ni = length(indices)
     @assert ni > 0
 
     out, _, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = vector_from_type(u.type, ni)
+        out = vector_from_type(T, ni)
     end
 
     check(
@@ -544,7 +545,7 @@ function _extract(u::GBVector, indices::Vector{I}; kwargs...) where I <: Union{U
     return out
 end
 
-function _assign!(u::GBVector, v::GBVector, indices::Union{Vector{I},GSpecial}; kwargs...) where I <: Union{UInt64,Int64}
+function _assign!(u::GBVector, v::GBVector, indices::Union{Vector{I},GAllTypes}; kwargs...) where I <: Union{UInt64,Int64}
     _, _, mask, accum, desc = __get_args(kwargs)
     
     check(

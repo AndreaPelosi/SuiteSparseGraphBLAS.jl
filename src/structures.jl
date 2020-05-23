@@ -80,18 +80,18 @@ mutable struct SelectOperator
     SelectOperator(ref, name) = new(load_global(ref), name)
 end
 
-mutable struct GBVector{T <: valid_types}
+mutable struct GBVector{T}
     p::Ptr{Cvoid}
     type::GType
 
-    GBVector{T}() where T = new(C_NULL, j2gtype(T))
+    GBVector{T}() where T = new(C_NULL, _gb_type(T))
 end
 
-mutable struct GBMatrix{T <: valid_types}
+mutable struct GBMatrix{T}
     p::Ptr{Cvoid}
     type::GType
 
-    GBMatrix{T}() where T = new(C_NULL, j2gtype(T))
+    GBMatrix{T}() where T = new(C_NULL, _gb_type(T))
 end
 
 mutable struct Descriptor
@@ -109,10 +109,3 @@ _gb_pointer(desc::Descriptor) = desc.p
 
 # default methods operators
 g_operators = nothing
-
-mutable struct GSpecial
-    p::Ptr{Cvoid}
-end
-
-pointer(t::GSpecial) = t.p
-length(t::GSpecial) = 0     # dummy length
