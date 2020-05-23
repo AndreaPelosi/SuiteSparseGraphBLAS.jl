@@ -1,11 +1,12 @@
 ```@docs
-vector_from_type
-vector_from_lists
+from_type(::DataType, ::Int64)
+from_lists(::Vector, ::Vector)
 from_vector
 size(::GBVector)
+==(::GBVector, ::GBVector)
+copy(::GBVector)
 nnz(::GBVector)
 findnz(::GBVector)
-copy(::GBVector)
 clear!(::GBVector)
 lastindex(::GBVector)
 emult(::GBVector, ::GBVector)

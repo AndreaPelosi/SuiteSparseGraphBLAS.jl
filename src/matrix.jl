@@ -2,12 +2,12 @@ import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix
              show, ==, *, |>
 
 """
-    matrix_from_type(type, m, n)
+    from_type(type, m, n)
 
 Create an empty `GBMatrix` of size `m`×`n` from the given type `type`.
 
 """
-function matrix_from_type(type, m, n)
+function from_type(type, m, n)
     r = GBMatrix{type}()
     GrB_Matrix_new(r, _gb_type(type), m, n)
     finalizer(_free, r)
@@ -15,7 +15,7 @@ function matrix_from_type(type, m, n)
 end
 
 """
-    matrix_from_lists(I, J, V; m = nothing, n = nothing, type = nothing, combine = Binaryop.FIRST)
+    from_lists(I, J, V; m = nothing, n = nothing, type = nothing, combine = Binaryop.FIRST)
 
 Create a new `GBMatrix` from the given lists of row indices, column indices and values.
 If `m` and `n` are not provided, they are computed from the max values of the row and column indices lists, respectively.
@@ -33,35 +33,35 @@ A combiner `Binary Operator` can be provided to manage duplicates values. If it 
 
 # Examples
 ```julia-repl
-julia> matrix_from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4])
+julia> from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4])
 3x2 GBMatrix{Int64} with 4 stored entries:
   [1, 1] = 5
   [1, 2] = 2
   [2, 2] = 7
   [3, 2] = 4
 
-julia> matrix_from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4], type=Float64)
+julia> from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4], type=Float64)
 3x2 GBMatrix{Float64} with 4 stored entries:
   [1, 1] = 5.0
   [1, 2] = 2.0
   [2, 2] = 7.0
   [3, 2] = 4.0
 
-julia> matrix_from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4], m=10, n=4)
+julia> from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4], m=10, n=4)
 10x4 GBMatrix{Int64} with 4 stored entries:
   [1, 1] = 5
   [1, 2] = 2
   [2, 2] = 7
   [3, 2] = 4
 
-julia> A = matrix_from_lists([1,1,2,3],[1,1,2,2], [5,2,7,4], combine=Binaryop.PLUS)
+julia> A = from_lists([1,1,2,3],[1,1,2,2], [5,2,7,4], combine=Binaryop.PLUS)
 3x2 GBMatrix{Int64} with 3 stored entries:
   [1, 1] = 7
   [2, 2] = 7
   [3, 2] = 4
 ```
 """
-function matrix_from_lists(I, J, V; m = nothing, n = nothing, type = nothing, combine = Binaryop.FIRST)
+function from_lists(I, J, V; m = nothing, n = nothing, type = nothing, combine = Binaryop.FIRST)
     @assert length(I) == length(J) == length(V)
     if m === nothing
         m = maximum(I)
@@ -75,7 +75,7 @@ function matrix_from_lists(I, J, V; m = nothing, n = nothing, type = nothing, co
         V = convert.(type, V)
     end
     gb_type = _gb_type(type)
-    m = matrix_from_type(type, m, n)
+    m = from_type(type, m, n)
 
     combine_bop = _get(combine, gb_type, gb_type, gb_type)
     I = map(x->x - 1, I)
@@ -101,7 +101,7 @@ julia> from_matrix([1 0 2; 0 0 3; 0 1 0])
 """
 function from_matrix(m)
     r, c = size(m)
-    res = matrix_from_type(eltype(m), r, c)
+    res = from_type(eltype(m), r, c)
 
     i, j = 1, 1
     for v in m
@@ -133,7 +133,7 @@ julia> identity(Bool, 4)
 ```
 """
 function identity(type, n)
-    res = matrix_from_type(type, n, n)
+    res = from_type(type, n, n)
     for i in 1:n
         res[i,i] = one(type)
     end
@@ -184,7 +184,7 @@ function ==(A::GBMatrix{T}, B::GBMatrix{U}) where {T,U}
     Anvals == nnz(B) || return false
 
     @with Binaryop.EQ, Monoids.LAND begin
-        C = emult(A, B, out = matrix_from_type(Bool, Asize...))
+        C = emult(A, B, out = from_type(Bool, Asize...))
         eq = reduce_scalar(C)
     end
     
@@ -247,7 +247,7 @@ function square(m::GBMatrix)
 end
 
 """
-    copy(m::GBMatrix{T})
+    copy(m::GBMatrix)
 
 Create a copy of `m`.
 
@@ -271,7 +271,7 @@ false
 ```
 """
 function copy(m::GBMatrix{T}) where T
-    cpy = matrix_from_type(T, size(m)...)
+    cpy = from_type(T, size(m)...)
     GrB_Matrix_dup(cpy, m)
     return cpy
 end
@@ -428,7 +428,7 @@ function mxm(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
     out, semiring, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = matrix_from_type(T, rowA, colB)
+        out = from_type(T, rowA, colB)
     end
 
     if semiring === NULL
@@ -486,7 +486,7 @@ function mxv(A::GBMatrix{T}, u::GBVector{U}; kwargs...) where {T,U}
     out, semiring, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = vector_from_type(T, rowA)
+        out = from_type(T, rowA)
     end
 
     if semiring === NULL
@@ -548,7 +548,7 @@ function emult(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
     out, operator, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = matrix_from_type(T, size(A)...)
+        out = from_type(T, size(A)...)
     end
 
     if operator === NULL
@@ -612,7 +612,7 @@ function eadd(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
     out, operator, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = matrix_from_type(T, size(A)...)
+        out = from_type(T, size(A)...)
     end
 
     if operator === NULL
@@ -668,7 +668,7 @@ function apply(A::GBMatrix{T}; kwargs...) where T
     out, unaryop, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = matrix_from_type(T, size(A)...)
+        out = from_type(T, size(A)...)
     end
 
     if unaryop === NULL
@@ -749,7 +749,7 @@ function select(A::GBMatrix{T}, op::SelectOperator; kwargs...) where T
     out, thunk, mask, accum, desc = __get_args(kwargs)
     
     if out === NULL
-        out = matrix_from_type(T, size(A)...)
+        out = from_type(T, size(A)...)
     end
 
     if accum === NULL
@@ -799,7 +799,7 @@ function reduce_vector(A::GBMatrix{T}; kwargs...) where T
     
     # operator: can be binary op or monoid
     if out === NULL
-        out = vector_from_type(T, size(A, 1))
+        out = from_type(T, size(A, 1))
     end
 
     if operator === NULL
@@ -901,7 +901,7 @@ function transpose(A::GBMatrix{T}; kwargs...) where T
     out, _, mask, accum, desc = __get_args(kwargs)
     
     if out === NULL
-        out = matrix_from_type(T, reverse(size(A))...)
+        out = from_type(T, reverse(size(A))...)
     end
 
     if accum !== NULL
@@ -958,7 +958,7 @@ function kron(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
     out, binaryop, mask, accum, desc = __get_args(kwargs)
     
     if out === NULL
-        out = matrix_from_type(T, size(A) .* size(B)...)
+        out = from_type(T, size(A) .* size(B)...)
     end
 
     if binaryop === NULL
@@ -987,7 +987,7 @@ function __extract_col__(A::GBMatrix{T}, col, pointer_rows, ni; out = NULL, mask
     @assert ni > 0
 
     if out === NULL
-        out = vector_from_type(T, ni)
+        out = from_type(T, ni)
     end
 
     if accum !== NULL
@@ -1024,7 +1024,7 @@ function __extract_matrix__(A::GBMatrix{T}, pointer_rows, pointer_cols, ni, nj; 
     @assert ni > 0 && nj > 0
 
     if out === NULL
-        out = matrix_from_type(T, ni, nj)
+        out = from_type(T, ni, nj)
     end
 
     if accum !== NULL

@@ -1,20 +1,24 @@
 ```@docs
-matrix_from_type
-matrix_from_lists
+from_type(::DataType, ::Int64, ::Int64)
+from_lists(::Vector, ::Vector, ::Vector)
 from_matrix
 identity
+Matrix(::GBMatrix)
 square
-findnz(::GBMatrix)
 size(::GBMatrix)
+findnz(::GBMatrix)
+==(::GBMatrix, ::GBMatrix)
 nnz(::GBMatrix)
 clear!(::GBMatrix)
+copy(::GBMatrix)
+lastindex(::GBMatrix)
 mxm
 mxv
 emult(::GBMatrix, ::GBMatrix)
 eadd(::GBMatrix, ::GBMatrix)
 apply(::GBMatrix)
 apply!(::GBMatrix)
-select
+select(::GBMatrix, _)
 reduce_vector
 reduce_scalar
 transpose

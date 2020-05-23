@@ -3,12 +3,12 @@ import Base: size, copy, lastindex, setindex!, getindex, show, ==, *, Broadcast.
 _gb_pointer(m::GBVector) = m.p
 
 """
-    vector_from_type(type, n)
+    from_type(type, n)
 
 Create an empty `GBVector` of size `n` from the given type `type`.
 
 """
-function vector_from_type(type, n)
+function from_type(type, n)
     v = GBVector{type}()
     GrB_Vector_new(v, _gb_type(type), n)
     finalizer(_free, v)
@@ -16,7 +16,7 @@ function vector_from_type(type, n)
 end
 
 """
-    vector_from_lists(I, V; n = nothing, type = nothing, combine = Binaryop.FIRST)
+    from_lists(I, V; n = nothing, type = nothing, combine = Binaryop.FIRST)
 
 Create a new `GBVector` from the given lists of indices and values.
 If `n` is not provided, it is computed from the max value of the indices list.
@@ -32,32 +32,32 @@ A combiner `Binary Operator` can be provided to manage duplicates values. If it 
 
 # Examples
 ```julia-repl
-julia> vector_from_lists([1,2,5], [1,4,2])
+julia> from_lists([1,2,5], [1,4,2])
 5-element GBVector{Int64} with 3 stored entries:
   [1] = 1
   [2] = 4
   [5] = 2
 
-julia> vector_from_lists([1,2,5], [1,4,2], type=Float32)
+julia> from_lists([1,2,5], [1,4,2], type=Float32)
 5-element GBVector{Float32} with 3 stored entries:
   [1] = 1.0
   [2] = 4.0
   [5] = 2.0
 
-julia> vector_from_lists([1,2,5], [1,4,2], n=10)
+julia> from_lists([1,2,5], [1,4,2], n=10)
 10-element GBVector{Int64} with 3 stored entries:
   [1] = 1
   [2] = 4
   [5] = 2
 
-julia> vector_from_lists([1,2,1,2,5], [1,4,2,4,2], combine=Binaryop.PLUS)
+julia> from_lists([1,2,1,2,5], [1,4,2,4,2], combine=Binaryop.PLUS)
 5-element GBVector{Int64} with 3 stored entries:
   [1] = 3
   [2] = 8
   [5] = 2
 ```
 """
-function vector_from_lists(I, V; n = nothing, type = nothing, combine = Binaryop.FIRST)
+function from_lists(I, V; n = nothing, type = nothing, combine = Binaryop.FIRST)
     @assert length(I) == length(V) 
     if n === nothing
         n = maximum(I)
@@ -71,7 +71,7 @@ function vector_from_lists(I, V; n = nothing, type = nothing, combine = Binaryop
 
     combine_bop = _get(combine, gb_type, gb_type, gb_type)
     I = map(x->x - 1, I)
-    v = vector_from_type(type, n)
+    v = from_type(type, n)
     GrB_Vector_build(v, I, V, length(V), combine_bop)
     return v
 end
@@ -92,7 +92,7 @@ julia> from_vector([1, 0, 0, 1, 2, 0])
 function from_vector(V)
     size = length(V)
     @assert size > 0
-    res = vector_from_type(eltype(V), size)
+    res = from_type(eltype(V), size)
     
     for (i, v) in enumerate(V)
         if !iszero(V[i])
@@ -126,7 +126,7 @@ function ==(u::GBVector{T}, v::GBVector{U}) where {T,U}
     unvals == nnz(v) || return false
 
     @with Binaryop.EQ, Monoids.LAND begin
-        w = emult(u, v, out = vector_from_type(Bool, usize))
+        w = emult(u, v, out = from_type(Bool, usize))
         eq = reduce(w)
     end
     
@@ -217,7 +217,7 @@ false
 ```
 """
 function copy(v::GBVector{T}) where T
-    cpy = vector_from_type(T, size(v))
+    cpy = from_type(T, size(v))
     GrB_Vector_dup(cpy, v)
     return cpy
 end
@@ -233,7 +233,7 @@ function clear!(v::GBVector)
 end
 
 """
-    lastindex(v::GBMatrix)
+    lastindex(v::GBVector)
 
 Return the last index of a vector `v`.
 
@@ -307,7 +307,7 @@ function emult(u::GBVector{T}, v::GBVector{U}; kwargs...) where {T,U}
     
     # operator: can be binary op, monoid and semiring
     if out === NULL
-        out = vector_from_type(T, size(u))
+        out = from_type(T, size(u))
     end
 
     if operator === NULL
@@ -352,7 +352,7 @@ julia> u = from_vector([1, 2, 3, 4]);
 
 julia> v = copy(u);
 
-julia> emult(u, v, operator = Binaryop.TIMES)
+julia> eadd(u, v, operator = Binaryop.TIMES)
 4-element GBVector{Int64} with 4 stored entries:
   [1] = 1
   [2] = 4
@@ -365,7 +365,7 @@ function eadd(u::GBVector{T}, v::GBVector{U}; kwargs...) where {T,U}
 
     # operator: can be binary op, monoid and semiring
     if out === NULL
-        out = vector_from_type(T, size(u))
+        out = from_type(T, size(u))
     end
 
     if operator === NULL
@@ -421,7 +421,7 @@ function vxm(u::GBVector{T}, A::GBMatrix{U}; kwargs...) where {T,U}
     out, semiring, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = vector_from_type(T, colA)
+        out = from_type(T, colA)
     end
 
     if semiring === NULL
@@ -470,7 +470,7 @@ function apply(u::GBVector{T}; kwargs...) where T
     out, unaryop, mask, accum, desc = __get_args(kwargs)
     
     if out === NULL
-        out = vector_from_type(T, size(u))
+        out = from_type(T, size(u))
     end
 
     if unaryop === NULL
@@ -570,7 +570,7 @@ function _extract(u::GBVector{T}, indices::Vector{I}; kwargs...) where {T,I <: U
     out, _, mask, accum, desc = __get_args(kwargs)
 
     if out === NULL
-        out = vector_from_type(T, ni)
+        out = from_type(T, ni)
     end
 
     check(

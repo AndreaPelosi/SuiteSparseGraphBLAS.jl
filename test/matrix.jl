@@ -3,7 +3,7 @@
     # from_type method
     for t in valid_types
         type = SG._gb_type(t)
-        matrix_type = SG.matrix_from_type(t, 1, 2)
+        matrix_type = SG.from_type(t, 1, 2)
         @test matrix_type.type == type
         @test SG.size(matrix_type) == (1, 2)
         I, J, X = SG.findnz(matrix_type)
@@ -14,25 +14,25 @@
 
     # automatic type inference and size from values list
     I, J, X = [1, 1], [1, 2], Int8[2, 3]
-    matrix_filled = SG.matrix_from_lists(I, J, X)
+    matrix_filled = SG.from_lists(I, J, X)
     @test matrix_filled.type == SG.INT8
     @test size(matrix_filled) == (1, 2)
     
     # automatic type inference, nvals and ncols given
     I, J, X = [1, 1], [1, 2], Int8[2, 3]
-    matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3)
+    matrix_filled = SG.from_lists(I, J, X, m = 2, n = 3)
     @test matrix_filled.type == SG.INT8
     @test size(matrix_filled) == (2, 3)
 
     # passed type parameter
     I, J, X = [1, 1], [1, 2], Int8[2, 3]
-    matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3, type = Int32)
+    matrix_filled = SG.from_lists(I, J, X, m = 2, n = 3, type = Int32)
     @test matrix_filled.type == SG.INT32
     @test size(matrix_filled) == (2, 3)
 
     # combine parameter - default (FIRST)
     I, J, X = [1, 1], [1, 1], Int8[2, 3]
-    matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3)
+    matrix_filled = SG.from_lists(I, J, X, m = 2, n = 3)
     @test matrix_filled.type == SG.INT8
     @test size(matrix_filled) == (2, 3)
     @test matrix_filled[1,1] == 2
@@ -40,7 +40,7 @@
 
     # combine parameter - given
     I, J, X = [1, 1], [1, 1], Int8[2, 3]
-    matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3, combine = Binaryop.PLUS)
+    matrix_filled = SG.from_lists(I, J, X, m = 2, n = 3, combine = Binaryop.PLUS)
     @test matrix_filled.type == SG.INT8
     @test size(matrix_filled) == (2, 3)
     @test matrix_filled[1,1] == 5
@@ -48,10 +48,10 @@
 
     # square
     for jl_t in valid_types
-        matrix_square = SG.matrix_from_type(jl_t, 10, 10)
+        matrix_square = SG.from_type(jl_t, 10, 10)
         @test SG.square(matrix_square)
         
-        matrix_not_square = SG.matrix_from_type(jl_t, 10, 11)
+        matrix_not_square = SG.from_type(jl_t, 10, 11)
         @test !SG.square(matrix_not_square)
     end
 
@@ -137,12 +137,12 @@
 
     # findnz
     I, J, X = [1, 1], [1, 2], [2, 3]
-    matrix = SG.matrix_from_lists(I, J, X)
+    matrix = SG.from_lists(I, J, X)
     @test SG.findnz(matrix) == (I, J, X)
 
     # clear
     I, J, X = [1, 1], [1, 2], [2, 3]
-    matrix = SG.matrix_from_lists(I, J, X)
+    matrix = SG.from_lists(I, J, X)
     @test SG.findnz(matrix) == (I, J, X)
     SG.clear!(matrix)
     I, J, X = SG.findnz(matrix)
@@ -150,7 +150,7 @@
 
     # getindex
     I, J, X = [1, 1], [1, 2], [2, 3]
-    matrix = SG.matrix_from_lists(I, J, X, m = 2, n = 2)
+    matrix = SG.from_lists(I, J, X, m = 2, n = 2)
     @test matrix[1,1] == 2
     @test matrix[1,2] == 3
     @test matrix[2,1] == 0
@@ -158,7 +158,7 @@
 
     # setindex
     I, J, X = [1, 1], [1, 2], [2, 3]
-    matrix = SG.matrix_from_lists(I, J, X, m = 2, n = 2)
+    matrix = SG.from_lists(I, J, X, m = 2, n = 2)
     matrix[1,1] = 10
     matrix[2,2] = 20
     @test matrix[1,1] == 10
@@ -167,7 +167,7 @@
     @test matrix[2,2] == 20
 
     # mxm
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = SG.copy(A)
     out = SG.mxm(A, B, semiring = Semirings.PLUS_TIMES)
     @test out[1,1] == 7
@@ -177,7 +177,7 @@
     @test out.type == SG.INT64
 
     # mxm - default semiring (PLUS_TIMES)
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = SG.copy(A)
     out = SG.mxm(A, B)
     @test out[1,1] == 7
@@ -188,7 +188,7 @@
 
 
     # mxv
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     v = SG.from_vector(Int64[1,2])
     out = SG.mxv(A, v, semiring = Semirings.PLUS_TIMES)
     @test size(out) == 2
@@ -196,7 +196,7 @@
     @test out[2] == 11
 
     # mxv - default semiring (PLUS_TIMES)
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     v = SG.from_vector(Int64[1,2])
     out = SG.mxv(A, v)
     @test size(out) == 2
@@ -206,7 +206,7 @@
     # emult
 
     # binary op
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = copy(A)
     out = SG.emult(A, B, operator = Binaryop.PLUS)
     @test size(out) == (2, 2)
@@ -216,7 +216,7 @@
     @test out[2,2] == 8
 
     # emult - default operator=binaryop (PLUS)
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = copy(A)
     out = SG.emult(A, B)
     @test size(out) == (2, 2)
@@ -226,7 +226,7 @@
     @test out[2,2] == 8
 
     # monoid
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = copy(A)
     out = SG.emult(A, B, operator = Monoids.PLUS)
     @test size(out) == (2, 2)
@@ -236,7 +236,7 @@
     @test out[2,2] == 8
 
     # semiring
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = copy(A)
     out = SG.emult(A, B, operator = Semirings.TIMES_PLUS)
     @test size(out) == (2, 2)
@@ -248,7 +248,7 @@
     # eadd
 
     # binaryop
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = copy(A)
     out = SG.eadd(A, B, operator = Binaryop.TIMES)
     @test out[1,1] == 1
@@ -257,7 +257,7 @@
     @test out[2,2] == 16
 
     # eadd - default operator=binaryop (PLUS)
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = copy(A)
     out = SG.eadd(A, B)
     @test out[1,1] == 2
@@ -266,7 +266,7 @@
     @test out[2,2] == 8
 
     # monoid
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = copy(A)
     out = SG.eadd(A, B, operator = Monoids.TIMES)
     @test out[1,1] == 1
@@ -275,7 +275,7 @@
     @test out[2,2] == 16
 
     # apply
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[-1,2,-3,-4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[-1,2,-3,-4])
     out = SG.apply(A, unaryop = Unaryop.ABS)
     @test out.type == SG.INT64
     @test size(out) == size(A)
@@ -285,7 +285,7 @@
     @test out[2,2] == 4
 
     dup = SG.unaryop(a->a * 2, name=:DUP_TEST)
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     out = SG.apply(A, unaryop = dup)
     @test out.type == SG.INT64
     @test size(out) == size(A)
@@ -294,7 +294,7 @@
     @test out[2,1] == 6
     @test out[2,2] == 8
 
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4])
     out = SG.apply(A, unaryop = dup)
     @test out.type == SG.INT8
     @test size(out) == size(A)
@@ -303,7 +303,7 @@
     @test out[2,1] == 6
     @test out[2,2] == 8
 
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4], type = Float64)
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4], type = Float64)
     out = SG.apply(A, unaryop = dup)
     @test out.type == SG.FP64
     @test size(out) == size(A)
@@ -315,7 +315,7 @@
 
     # apply!
 
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[-1,2,-3,-4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[-1,2,-3,-4])
     SG.apply!(A, unaryop = Unaryop.ABS)
     @test A.type == SG.INT64
     @test size(A) == (2, 2)
@@ -325,7 +325,7 @@
     @test A[2,2] == 4
 
     # apply! - default unaryop (ABS)
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[-1,2,-3,-4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[-1,2,-3,-4])
     SG.apply!(A)
     @test A.type == SG.INT64
     @test size(A) == (2, 2)
@@ -335,7 +335,7 @@
     @test A[2,2] == 4
 
     dup = SG.unaryop(a->a * 2)
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     SG.apply!(A, unaryop = dup)
     @test A.type == SG.INT64
     @test A[1,1] == 2
@@ -343,7 +343,7 @@
     @test A[2,1] == 6
     @test A[2,2] == 8
 
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4])
     SG.apply!(A, unaryop = dup)
     @test A.type == SG.INT8
     @test A[1,1] == 2
@@ -351,7 +351,7 @@
     @test A[2,1] == 6
     @test A[2,2] == 8
 
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4], type = Float64)
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4], type = Float64)
     out = SG.apply!(A, unaryop = dup)
     @test A.type == SG.FP64
     @test A === out
@@ -363,7 +363,7 @@
     # reduce vector
 
     # binary op - square matrix
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     out = SG.reduce_vector(A, operator = Binaryop.PLUS)
     @test isa(out, SG.GBVector)
     @test size(out) == 2
@@ -371,7 +371,7 @@
     @test out[2] == 7
 
     # binary op - rect matrix
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     out = SG.reduce_vector(A, operator = Binaryop.TIMES)
     @test isa(out, SG.GBVector)
     @test size(out) == 3
@@ -380,7 +380,7 @@
     @test out[3] == 30
 
     # monoid - square matrix
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     out = SG.reduce_vector(A, operator = Monoids.PLUS)
     @test isa(out, SG.GBVector)
     @test size(out) == 2
@@ -388,7 +388,7 @@
     @test out[2] == 7
 
     # reduce_vector (square matrix) - default operator=monoid (PLUS)
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     out = SG.reduce_vector(A)
     @test isa(out, SG.GBVector)
     @test size(out) == 2
@@ -396,7 +396,7 @@
     @test out[2] == 7
 
     # monoid - rect matrix
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     out = SG.reduce_vector(A, operator = Monoids.TIMES)
     @test isa(out, SG.GBVector)
     @test size(out) == 3
@@ -405,7 +405,7 @@
     @test out[3] == 30
 
     # reduce_vector (rect matrix) - default monoid (PLUS)
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     out = SG.reduce_vector(A)
     @test isa(out, SG.GBVector)
     @test size(out) == 3
@@ -416,49 +416,49 @@
 
     # reduce scalar
     # square matrix - int64
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     out = SG.reduce_scalar(A, monoid = Monoids.PLUS)
     @test isa(out, Int64)
     @test out == 10
 
     # reduce_scalar (square matrix) - default monoid (PLUS) - int64
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     out = SG.reduce_scalar(A)
     @test isa(out, Int64)
     @test out == 10
 
     # rect matrix - int64
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     out = SG.reduce_scalar(A, monoid = Monoids.PLUS)
     @test isa(out, Int64)
     @test out == 21
 
     # reduce_scalar (rect matrix) - default monoid (PLUS) - int64
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     out = SG.reduce_scalar(A)
     @test isa(out, Int64)
     @test out == 21
 
     # square matrix - fp64
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Float64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Float64[1,2,3,4])
     out = SG.reduce_scalar(A, monoid = Monoids.PLUS)
     @test isa(out, Float64)
     @test out == Float64(10)
 
     # reduce_scalar (square matrix) - default monoid (PLUS) - fp64
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Float64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Float64[1,2,3,4])
     out = SG.reduce_scalar(A)
     @test isa(out, Float64)
     @test out == Float64(10)
 
     # rect matrix - fp64
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Float64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Float64[1,2,3,4,5,6])
     out = SG.reduce_scalar(A, monoid = Monoids.PLUS)
     @test isa(out, Float64)
     @test out == Float64(21)
 
     # reduce_scalar (rect matrix) - default monoid (PLUS) - fp64
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Float64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Float64[1,2,3,4,5,6])
     out = SG.reduce_scalar(A)
     @test isa(out, Float64)
     @test out == Float64(21)
@@ -466,7 +466,7 @@
 
     # transpose
     # square matrix
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     out = SG.transpose(A)
     @test size(out) == size(A)
     @test out[1,1] == 1
@@ -475,14 +475,14 @@
     @test out[2,2] == 4
 
     # adjoint
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     tran = A'
     @test size(tran) == (2, 3)
     @test tran[1,1] == 1 && tran[1,2] == 3 && tran[1,3] == 5
     @test tran[2,1] == 2 && tran[2,2] == 4 && tran[2,3] == 6
 
     # rect matrix
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     out = SG.transpose(A)
     @test size(out) == (2, 3)
     @test out[1,1] == 1
@@ -495,7 +495,7 @@
 
     # # transpose!
     # # square matrix
-    # A = SG.matrix_from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
+    # A = SG.from_lists([0,0,1,1], [0,1,0,1], Int64[1,2,3,4])
     # SG.transpose!(A)
     # @test size(A) == (2,2)
     # @test A[0,0] == 1
@@ -504,7 +504,7 @@
     # @test A[1,1] == 4
 
     # # rect matrix
-    # A = SG.matrix_from_lists([0,0,1,1,2,2], [0,1,0,1,0,1], Int64[1,2,3,4,5,6])
+    # A = SG.from_lists([0,0,1,1,2,2], [0,1,0,1,0,1], Int64[1,2,3,4,5,6])
     # SG.transpose!(A)
     # @test size(A) == (2,3)
     # @test A[0,0] == 1
@@ -517,7 +517,7 @@
 
     # kron
     # square matrix
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = SG.copy(A)
     out = SG.kron(A, B, binaryop = Binaryop.TIMES)
     @test size(out) == (4, 4)
@@ -527,7 +527,7 @@
     @test out[4,1] == 9 && out[4,2] == 12 && out[4,3] == 12 && out[4,4] == 16
 
     # kron (square matrix) - default binaryop (PLUS)
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = SG.copy(A)
     out = SG.kron(A, B)
     @test size(out) == (4, 4)
@@ -539,7 +539,7 @@
 
     # extract col
     # square matrix
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     c1 = SG._extract_col(A, 0, [0,1])
     @test isa(c1, SG.GBVector)
     @test size(c1) == 2
@@ -561,7 +561,7 @@
     @test c4[1] == 2
 
     # rect matrix
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     c1 = SG._extract_col(A, 0, [0,1,2])
     @test isa(c1, SG.GBVector)
     @test size(c1) == 3
@@ -585,7 +585,7 @@
 
     # extract row
     # square matrix
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     c1 = SG._extract_row(A, 0, [0,1])
     @test isa(c1, SG.GBVector)
     @test size(c1) == 2
@@ -607,7 +607,7 @@
     @test c4[1] == 3
 
     # rect matrix
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     c1 = SG._extract_row(A, 0, [0,1])
     @test isa(c1, SG.GBVector)
     @test size(c1) == 2
@@ -622,7 +622,7 @@
 
     # extract matrix
     # 2 x 2 matrix
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     out = SG._extract_matrix(A, [0,1], [0,1])
     @test isa(out, SG.GBMatrix)
     @test size(out) == (2, 2)
@@ -632,7 +632,7 @@
     @test out[2,2] == 4
 
     # 3 x 3 matrix
-    A = SG.matrix_from_lists([1,1,1,2,2,2,3,3,3], [1,2,3,1,2,3,1,2,3], Int64[1,2,3,4,5,6,7,8,9])
+    A = SG.from_lists([1,1,1,2,2,2,3,3,3], [1,2,3,1,2,3,1,2,3], Int64[1,2,3,4,5,6,7,8,9])
     out = SG._extract_matrix(A, [0,2], [0,1])
     @test isa(out, SG.GBMatrix)
     @test size(out) == (2, 2)
@@ -641,7 +641,7 @@
 
 
     # assign row
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     u = SG.from_vector([10,11])
     SG._assign_row!(A, u, 1, [0,1])
     @test A[1,1] == 1 && A[1,2] == 2
@@ -649,7 +649,7 @@
 
 
     # assign col
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     u = SG.from_vector([10,11])
     SG._assign_col!(A, u, 1, [0,1])
     @test A[1,1] == 1 && A[1,2] == 10
@@ -657,14 +657,14 @@
 
 
     # assign matrix
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
-    B = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[5,6,7,8])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    B = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[5,6,7,8])
     SG._assign_matrix!(A, B, [0,1], [0,1])
     @test A[1,1] == 5 && A[1,2] == 6
     @test A[2,1] == 7 && A[2,2] == 8
 
-    A = SG.matrix_from_lists([1,1,1,2,2,2,3,3,3], [1,2,3,1,2,3,1,2,3], Int64[1,2,3,4,5,6,7,8,9])
-    B = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[10,11,12,13])
+    A = SG.from_lists([1,1,1,2,2,2,3,3,3], [1,2,3,1,2,3,1,2,3], Int64[1,2,3,4,5,6,7,8,9])
+    B = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[10,11,12,13])
     SG._assign_matrix!(A, B, [0,2], [1,2])
     @test A[1,1] == 1 && A[1,2] == 10 && A[1,3] == 11
     @test A[2,1] == 4 && A[2,2] == 5 && A[2,3] == 6
@@ -674,7 +674,7 @@
     
     # get index - colon, unitrange, vector indices ...
     # range of rows
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     u = A[1:2, 2]
     @test isa(u, SG.GBVector)
     @test u.type == SG.INT64
@@ -682,7 +682,7 @@
     @test u[1] == 2
     @test u[2] == 4
 
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     u = A[2:3, 2]
     @test isa(u, SG.GBVector)
     @test u.type == SG.INT64
@@ -691,7 +691,7 @@
     @test u[2] == 6
 
     # range of cols
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     u = A[1, 1:2]
     @test isa(u, SG.GBVector)
     @test u.type == SG.INT64
@@ -699,7 +699,7 @@
     @test u[1] == 1
     @test u[2] == 2
 
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     u = A[2, 1:2]
     @test isa(u, SG.GBVector)
     @test u.type == SG.INT64
@@ -708,7 +708,7 @@
     @test u[2] == 4
 
     # select all rows with colon operator
-    A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
+    A = SG.from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     u = A[:, 1]
     @test isa(u, SG.GBVector)
     @test u.type == SG.INT64
@@ -716,7 +716,7 @@
     @test u[1] == 1 && u[2] == 3 && u[3] == 5
 
     # select submatrix with row and col range
-    A = SG.matrix_from_lists([1,1,1,2,2,2,3,3,3], [1,2,3,1,2,3,1,2,3], Int64[1,2,3,4,5,6,7,8,9])
+    A = SG.from_lists([1,1,1,2,2,2,3,3,3], [1,2,3,1,2,3,1,2,3], Int64[1,2,3,4,5,6,7,8,9])
     u = A[2:3, 2:3]
     @test isa(u, SG.GBMatrix)
     @test size(u) == (2, 2)
@@ -725,7 +725,7 @@
     @test u[2,1] == 8 && u[2,2] == 9
 
     # select submatrix with row and col vector indices
-    A = SG.matrix_from_lists([1,1,1,2,2,2,3,3,3], [1,2,3,1,2,3,1,2,3], Int64[1,2,3,4,5,6,7,8,9])
+    A = SG.from_lists([1,1,1,2,2,2,3,3,3], [1,2,3,1,2,3,1,2,3], Int64[1,2,3,4,5,6,7,8,9])
     u = A[[1,3], [1,3]]
     @test isa(u, SG.GBMatrix)
     @test size(u) == (2, 2)
@@ -737,7 +737,7 @@
 
     # setindex!
     # index
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     A[1,1] = 10
     @test A[1,1] == 10 && A[1,2] == 2 && A[2,1] == 3 && A[2,2] == 4
     A[1,2] = 11
@@ -748,86 +748,86 @@
     @test A[1,1] == 10 && A[1,2] == 11 && A[2,1] == 12 && A[2,2] == 13
 
     # row colon, col index
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = SG.from_vector([10, 11])
     A[:,1] = B
     @test A[1,1] == 10 && A[1,2] == 2 && A[2,1] == 11 && A[2,2] == 4
 
     # row index, col colon
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = SG.from_vector([10, 11])
     A[2,:] = B
     @test A[1,1] == 1 && A[1,2] == 2 && A[2,1] == 10 && A[2,2] == 11
 
     # row list, col index
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = SG.from_vector([10, 11])
     A[[1,2],1] = B
     @test A[1,1] == 10 && A[1,2] == 2 && A[2,1] == 11 && A[2,2] == 4
 
     # row index, col list
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = SG.from_vector([10, 11])
     A[2,[1,2]] = B
     @test A[1,1] == 1 && A[1,2] == 2 && A[2,1] == 10 && A[2,2] == 11
 
     # row range, col index
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = SG.from_vector([10, 11])
     A[1:2,1] = B
     @test A[1,1] == 10 && A[1,2] == 2 && A[2,1] == 11 && A[2,2] == 4
 
     # row index, col range
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     B = SG.from_vector([10, 11])
     A[2,1:2] = B
     @test A[1,1] == 1 && A[1,2] == 2 && A[2,1] == 10 && A[2,2] == 11
 
     # row list, col list
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
-    B = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    B = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
     A[[1,2],[1,2]] = B
     @test A[1,1] == 10 && A[1,2] == 20 && A[2,1] == 30 && A[2,2] == 40
 
     # row list, col list
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
-    B = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    B = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
     A[[1,2],[1,2]] = B
     @test A[1,1] == 10 && A[1,2] == 20 && A[2,1] == 30 && A[2,2] == 40
 
     # row range, col range
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
-    B = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    B = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
     A[1:2,1:2] = B
     @test A[1,1] == 10 && A[1,2] == 20 && A[2,1] == 30 && A[2,2] == 40
 
     # row range, col colon
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
-    B = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    B = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
     A[1:2,:] = B
     @test A[1,1] == 10 && A[1,2] == 20 && A[2,1] == 30 && A[2,2] == 40
 
     # row colon, col range
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
-    B = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    B = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
     A[:,1:2] = B
     @test A[1,1] == 10 && A[1,2] == 20 && A[2,1] == 30 && A[2,2] == 40
 
     # row list, col colon
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
-    B = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    B = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
     A[[1,2],:] = B
     @test A[1,1] == 10 && A[1,2] == 20 && A[2,1] == 30 && A[2,2] == 40
 
     # row colon, col list
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
-    B = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    B = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
     A[:,[1,2]] = B
     @test A[1,1] == 10 && A[1,2] == 20 && A[2,1] == 30 && A[2,2] == 40
 
     # row colon, col colon
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
-    B = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
+    B = SG.from_lists([1,1,2,2], [1,2,1,2], Int64[10,20,30,40])
     A[:,:] = B
     @test A[1,1] == 10 && A[1,2] == 20 && A[2,1] == 30 && A[2,2] == 40
 

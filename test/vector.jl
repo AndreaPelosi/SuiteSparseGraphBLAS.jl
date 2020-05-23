@@ -3,7 +3,7 @@
     # from_type method
     for t in valid_types
         type = SG._gb_type(t)
-        vector_type = SG.vector_from_type(t, 10)
+        vector_type = SG.from_type(t, 10)
         @test vector_type.type == type
         @test SG.size(vector_type) == 10
         I, X = SG.findnz(vector_type)
@@ -14,25 +14,25 @@
 
     # automatic type inference and size from values from lists
     I, X = [1,2,4,5], Int64[1,2,3,4]
-    v = SG.vector_from_lists(I, X)
+    v = SG.from_lists(I, X)
     @test v.type == SG.INT64
     @test size(v) == 5
 
     # automatic type inference, given size
     I, X = [1,2,4,5], Int64[1,2,3,4]
-    v = SG.vector_from_lists(I, X, n = 10)
+    v = SG.from_lists(I, X, n = 10)
     @test v.type == SG.INT64
     @test size(v) == 10
 
     # passed type parameter
     I, X = [1,2,4,5], Int8[1,2,3,4]
-    v = SG.vector_from_lists(I, X, n = 10, type = Int32)
+    v = SG.from_lists(I, X, n = 10, type = Int32)
     @test v.type == SG.INT32
     @test size(v) == 10
 
     # combine parameter - default (FIRST)
     I, X = [1,1,4,5], Int8[1,2,3,4]
-    v = SG.vector_from_lists(I, X, n = 10)
+    v = SG.from_lists(I, X, n = 10)
     @test v.type == SG.INT8
     @test size(v) == 10
     @test v[1] == 1
@@ -40,7 +40,7 @@
 
     # combine parameter - given
     I, X = [1,1,4,5], Int8[1,2,3,4]
-    v = SG.vector_from_lists(I, X, combine = Binaryop.PLUS)
+    v = SG.from_lists(I, X, combine = Binaryop.PLUS)
     @test v.type == SG.INT8
     @test size(v) == 5
     @test v[1] == 3
@@ -48,12 +48,12 @@
 
     # findnz
     I, X = [1,2,4,5], Int8[1,2,3,4]
-    v = SG.vector_from_lists(I, X)
+    v = SG.from_lists(I, X)
     @test SG.findnz(v) == (I, X)
 
     # clear
     I, X = [1,2,4,5], Int8[1,2,3,4]
-    v = SG.vector_from_lists(I, X)
+    v = SG.from_lists(I, X)
     @test SG.findnz(v) == (I, X)
     SG.clear!(v)
     I, X = SG.findnz(v)
@@ -61,7 +61,7 @@
 
     # getindex
     I, X = [1,2,3,4], Int8[1,2,3,4]
-    v = SG.vector_from_lists(I, X)
+    v = SG.from_lists(I, X)
     @test v[1] == 1
     @test v[2] == 2
     @test v[3] == 3
@@ -71,7 +71,7 @@
 
     # setindex!
     I, X = [1,2,3,4], Int8[1,2,3,4]
-    v = SG.vector_from_lists(I, X)
+    v = SG.from_lists(I, X)
     v[1] = 10
     v[2] = 20
     @test v[1] == 10
@@ -166,7 +166,7 @@
 
     # vxm
     v = SG.from_vector(Int64[1,2])
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], [1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], [1,2,3,4])
     out = SG.vxm(v, A, semiring = Semirings.PLUS_TIMES)
     @test size(out) == 2
     @test out[1] == 7

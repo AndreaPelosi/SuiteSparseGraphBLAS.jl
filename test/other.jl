@@ -3,7 +3,7 @@
     # one operator
 
     @test SG.g_operators.semiring === Semirings.PLUS_TIMES
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], [1,2,3,4])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], [1,2,3,4])
     B = copy(A)
     res1 = SG.mxm(A, B)
     SG.@with Semirings.TIMES_PLUS begin
@@ -20,7 +20,7 @@
     # two operator
     @test SG.g_operators.semiring === Semirings.PLUS_TIMES
     @test SG.g_operators.monoid === Monoids.PLUS
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], [2,3,4,5])
+    A = SG.from_lists([1,1,2,2], [1,2,1,2], [2,3,4,5])
     B = copy(A)
 
     SG.@with Semirings.TIMES_PLUS, Monoids.TIMES begin
