@@ -70,6 +70,9 @@ export @with
 
 export GBMatrix, GBVector, SelectOperator, UnaryOperator, BinaryOperator, Monoid, Semiring
 
-export unaryop, binaryop, monoid, semiring
+export unaryop, binaryop, monoid, semiring, descriptor
+
+# export fields / values descriptor
+export outp, mask, inp0, inp1, default, replace, scmp, tran
 
 end # end of module
