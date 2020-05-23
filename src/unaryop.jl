@@ -1,6 +1,22 @@
 import Base: show
 
-# create new unary op from function fun, called s
+"""
+    unaryop(fun; [xtype, ztype], [name])
+
+Create a `UnaryOperator` from the given function `fun`.
+Function `fun` must take only one parameter.
+It is possible to give an hint of the future use of the `UnaryOperator`, providing the input and the output domains,
+through `xtype` and `ztype`, respectively.
+If a `name` is provided, the `Unary Operator` is inserted in the global variable `Unaryop`.
+
+# Examples
+```julia-repl
+julia> unaryop = unaryop((a) -> 2a, name = :DOUBLE);
+
+julia> unaryop === Unaryop.DOUBLE
+true
+```
+"""
 function unaryop(fun::Function; xtype = nothing, ztype = nothing, name::Union{Symbol, Nothing} = nothing)
     x_gb_type = _gb_type(xtype)
     z_gb_type = _gb_type(ztype)
@@ -13,11 +29,11 @@ function unaryop(fun::Function; xtype = nothing, ztype = nothing, name::Union{Sy
             @eval(Unaryop, export $name)
         end
     else
-        uop = UnaryOperator(fun, "$(string(name))_$(z_gb_type.name)")
+        uop = UnaryOperator(fun, "$(string(name))")
     end
     if xtype !== nothing && ztype !== nothing
         if findfirst(op->op.xtype === x_gb_type && op.ztype === z_gb_type, uop.impl) === nothing
-            op = GrB_UnaryOp_new(fun, z_gb_type, x_gb_type)
+            op = _unaryop_new(fun, z_gb_type, x_gb_type)
             push!(uop.impl, op)
         end
     end
@@ -55,7 +71,7 @@ function _get(uop::UnaryOperator, types...)
     ztype, xtype = types
     index = findfirst(op->op.xtype === xtype && op.ztype === ztype, uop.impl)
     if index === nothing
-        op = GrB_UnaryOp_new(uop.fun, ztype, xtype)
+        op = _unaryop_new(uop.fun, ztype, xtype)
         push!(uop.impl, op)
         return op
     else
@@ -63,7 +79,8 @@ function _get(uop::UnaryOperator, types...)
     end
 end
 
-function GrB_UnaryOp_new(fn::Function, ztype::GType{T}, xtype::GType{U}) where {T,U}
+# create a new GrB_UnaryOp
+function _unaryop_new(fn::Function, ztype::GType{T}, xtype::GType{U}) where {T,U}
 
     op = GrB_UnaryOp()
     op.ztype = ztype

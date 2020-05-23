@@ -1,6 +1,22 @@
 import Base: show
 
-# create new unary op from function fun, called s
+"""
+    binaryop(fun; [xtype, ytype, ztype], [name])
+
+Create a `BinaryOperator` from the given function `fun`.
+Function `fun` must take two parameters.
+It is possible to give an hint of the future use of the `BinaryOperator`, providing the inputs and the output domains,
+through `xtype`, `ytype` and `ztype`, respectively.
+If a `name` is provided, the `Binary Operator` is inserted in the global variable `Binaryop`.
+
+# Examples
+```julia-repl
+julia> binaryop = binaryop((a, b) -> a÷b, name = :DIV);
+
+julia> binaryop === Binaryop.DIV
+true
+```
+"""
 function binaryop(fun::Function; xtype = nothing, ztype = nothing, ytype = nothing, name::Union{Symbol, Nothing} = nothing)
     if name !== nothing
         if hasproperty(Binaryop, name)
@@ -11,14 +27,14 @@ function binaryop(fun::Function; xtype = nothing, ztype = nothing, ytype = nothi
             @eval(Binaryop, export $name)
         end
     else
-        bop = BinaryOperator(fun, "$(string(name))_$(ztype.name)")
+        bop = BinaryOperator(fun, "$(fun)")
     end
     if xtype !== nothing && ztype !== nothing && ytype !== nothing
         x_gb_type = _gb_type(xtype)
         z_gb_type = _gb_type(ztype)
         y_gb_type = _gb_type(ytype)
         if findfirst(op->op.xtype === x_gb_type && op.ztype === z_gb_type && op.ytype === y_gb_type, bop.impl) === nothing
-            op = GrB_BinaryOp_new(fun, z_gb_type, x_gb_type, y_gb_type)
+            op = _binaryOp_new(fun, z_gb_type, x_gb_type, y_gb_type)
             push!(bop.impl, op)
         end    
     end
@@ -69,7 +85,7 @@ function _get(binary_op::BinaryOperator, types...)
     if index === nothing
         if binary_op.fun !== nothing
             # user defined binary op
-            bop = GrB_BinaryOp_new(binary_op.fun, ztype, xtype, ytype)
+            bop = _binaryOp_new(binary_op.fun, ztype, xtype, ytype)
             push!(binary_op.impl, bop)
             return bop
         end
@@ -78,7 +94,7 @@ function _get(binary_op::BinaryOperator, types...)
     end
 end
 
-function GrB_BinaryOp_new(fn::Function, ztype::GType{T}, xtype::GType{U}, ytype::GType{V}) where {T,U,V}
+function _binaryOp_new(fn::Function, ztype::GType{T}, xtype::GType{U}, ytype::GType{V}) where {T,U,V}
     op = GrB_BinaryOp()
     op.xtype = xtype
     op.ytype = ytype

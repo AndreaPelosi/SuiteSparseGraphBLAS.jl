@@ -68,6 +68,8 @@ export from_vector, vxm, reduce
 
 export @with
 
-export GBMatrix, GBVector, SelectOperator
+export GBMatrix, GBVector, SelectOperator, UnaryOperator, BinaryOperator, Monoid, Semiring
+
+export unaryop, binaryop, monoid, semiring
 
 end # end of module

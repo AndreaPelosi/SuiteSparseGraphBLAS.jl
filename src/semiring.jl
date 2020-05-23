@@ -1,5 +1,19 @@
 import Base: show
 
+"""
+    semiring(add, mult; [name])
+
+Create a `Semiring` from the commutative and associative `Monoid` `add` and the `Binary Operator` `mult`.
+If a `name` is provided, the `Semiring` is inserted in the global variable `Semirings`.
+
+# Examples
+```julia-repl
+julia> semiring = semiring(Monoids.LAND, Binaryop.EQ, name=:USER_DEFINED);
+
+julia> semiring === Semirings.USER_DEFINED
+true
+```
+"""
 function semiring(add::Monoid, mult::BinaryOperator; name::Union{Symbol, Nothing} = nothing)
     if name !== nothing
         if hasproperty(Semirings, name)
@@ -25,7 +39,7 @@ function _get(semiring::Semiring, types...)
             bop = _get(semiring.binaryop, ztype, xtype, ytype)
             mon = _get(semiring.monoid, ztype)
 
-            sem = GrB_Semiring_new(mon, bop)
+            sem = _semiring_new(mon, bop)
             push!(semiring.impl, sem)
             return sem
         end
@@ -77,11 +91,8 @@ function load_builtin_semiring()
         
 end
 
-"""
-    GrB_Semiring_new(monoid, binary_op)
-Initialize a GraphBLAS semiring with specified monoid and binary operator.
-"""
-function GrB_Semiring_new(monoid::GrB_Monoid, binary_op::GrB_BinaryOp)
+# create a GrB_Semiring
+function _semiring_new(monoid::GrB_Monoid, binary_op::GrB_BinaryOp)
     semiring = GrB_Semiring()
     semiring.xtype = binary_op.xtype
     semiring.ytype = binary_op.ytype

@@ -11,6 +11,7 @@ makedocs(
 		"Home"								=> "index.md",
     "Matrix operations"					=> "matrix.md",
     "Vector operations"					=> "vector.md",
+    "Operators"                 => "operator.md"
     ]
 )
 

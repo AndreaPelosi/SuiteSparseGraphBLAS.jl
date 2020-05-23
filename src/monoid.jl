@@ -1,7 +1,22 @@
 import Base: show
 
-# create new monoid from binary operation and identity value
-function monoid(bin_op::BinaryOperator, identity::T; name::Union{Symbol, Nothing} = nothing) where T
+"""
+    monoid(bin_op, identity; [name])
+
+Create a `Monoid` from the associative `Binary Operator` `bin_op` and the `identity` value.
+If a `name` is provided, the `Monoid` is inserted in the global variable `Monoids`.
+
+# Examples
+```julia-repl
+julia> binaryop = binaryop((a, b) -> a÷b);
+
+julia> monoid = monoid(binaryop, 1, name=:DIV_MONOID);
+
+julia> monoid === Monoids.DIV_MONOID
+true
+```
+"""
+function monoid(bin_op::BinaryOperator, identity::T; name::Union{Symbol,Nothing} = nothing) where T
     domain = _gb_type(T)
     if name !== nothing
         if hasproperty(Monoids, name)
@@ -14,11 +29,11 @@ function monoid(bin_op::BinaryOperator, identity::T; name::Union{Symbol, Nothing
     else
         monoid = Monoids(string(name))
     end
-    index = findfirst(mon -> mon.domain == domain, monoid.impl)
+    index = findfirst(mon->mon.domain == domain, monoid.impl)
     if index === nothing
         # create a new monoid
         bop = _get(bin_op, domain, domain, domain)
-        mon = GrB_Monoid_new(bop, identity)
+        mon = _monoid_new(bop, identity)
         push!(monoid.impl, mon)
     end
     return monoid
@@ -26,8 +41,8 @@ end
 
 function _get(monoid::Monoid, types...)
     (domain,) = types
-    index = findfirst(mon -> mon.domain == domain, monoid.impl)
-    if index == nothing
+    index = findfirst(mon->mon.domain == domain, monoid.impl)
+    if index === nothing
         error("monoid not find")
     end
     return monoid.impl[index]
@@ -38,9 +53,9 @@ function load_builtin_monoid()
     function load(lst)
         for op in lst
             bpn = split(op, "_")
-            type = str2gtype[string(bpn[end-1])]
+            type = str2gtype[string(bpn[end - 1])]
             
-            monoid_name = Symbol(join(bpn[2:end-2], "_"))
+            monoid_name = Symbol(join(bpn[2:end - 2], "_"))
             if hasproperty(Monoids, monoid_name)
                 monoid = getproperty(Monoids, monoid_name)
             else
@@ -63,10 +78,10 @@ function load_builtin_monoid()
     ["MONOID"])
 
     load(cat(grb_mon, grb_mon_bool, dims = 1))
-        
+
 end
 
-function GrB_Monoid_new(binary_op::GrB_BinaryOp, identity::T) where T
+function _monoid_new(binary_op::GrB_BinaryOp, identity::T) where T
     monoid = GrB_Monoid()
     monoid.domain = _gb_type(T)
 
@@ -90,7 +105,7 @@ function __enter__(mon::Monoid)
     global g_operators
     old = g_operators.monoid
     g_operators = Base.setindex(g_operators, mon, :monoid)
-    return (monoid=old,)
+    return (monoid = old,)
 end
 
 show(io::IO, mon::Monoid) = print(io, "Monoid($(mon.name))")
