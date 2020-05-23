@@ -2,8 +2,8 @@
 
     # from_type method
     for t in valid_types
-        type = SG.j2gtype(t)
-        vector_type = SG.vector_from_type(type, 10)
+        type = SG._gb_type(t)
+        vector_type = SG.vector_from_type(t, 10)
         @test vector_type.type == type
         @test SG.size(vector_type) == 10
         I, X = SG.findnz(vector_type)
@@ -15,25 +15,25 @@
     # automatic type inference and size from values from lists
     I, X = [1,2,4,5], Int64[1,2,3,4]
     v = SG.vector_from_lists(I, X)
-    @test v.type == INT64
+    @test v.type == SG.INT64
     @test size(v) == 5
 
     # automatic type inference, given size
     I, X = [1,2,4,5], Int64[1,2,3,4]
     v = SG.vector_from_lists(I, X, n = 10)
-    @test v.type == INT64
+    @test v.type == SG.INT64
     @test size(v) == 10
 
     # passed type parameter
     I, X = [1,2,4,5], Int8[1,2,3,4]
-    v = SG.vector_from_lists(I, X, n = 10, type = INT32)
-    @test v.type == INT32
+    v = SG.vector_from_lists(I, X, n = 10, type = Int32)
+    @test v.type == SG.INT32
     @test size(v) == 10
 
     # combine parameter - default (FIRST)
     I, X = [1,1,4,5], Int8[1,2,3,4]
     v = SG.vector_from_lists(I, X, n = 10)
-    @test v.type == INT8
+    @test v.type == SG.INT8
     @test size(v) == 10
     @test v[1] == 1
     @test SG.nnz(v) == 3
@@ -41,7 +41,7 @@
     # combine parameter - given
     I, X = [1,1,4,5], Int8[1,2,3,4]
     v = SG.vector_from_lists(I, X, combine = Binaryop.PLUS)
-    @test v.type == INT8
+    @test v.type == SG.INT8
     @test size(v) == 5
     @test v[1] == 3
     @test SG.nnz(v) == 3
@@ -82,7 +82,7 @@
 
     # from_vector
     v = SG.from_vector(Int32[1,2,3])
-    @test v.type == INT32
+    @test v.type == SG.INT32
     @test v[1] == 1 && v[2] == 2 && v[3] == 3
 
     
@@ -93,7 +93,7 @@
     v = SG.from_vector(Int64[6,7,8,9,10])
     out = SG.emult(u, v, operator = Binaryop.PLUS)
     @test size(out) == 5
-    @test out.type == INT64
+    @test out.type == SG.INT64
     @test out[1] == 7
     @test out[2] == 9
     @test out[3] == 11
@@ -105,7 +105,7 @@
     v = SG.from_vector(Int64[6,7,8,9,10])
     out = SG.emult(u, v, operator = Monoids.PLUS)
     @test size(out) == 5
-    @test out.type == INT64
+    @test out.type == SG.INT64
     @test out[1] == 7
     @test out[2] == 9
     @test out[3] == 11
@@ -117,7 +117,7 @@
     v = SG.from_vector(Int64[6,7,8,9,10])
     out = SG.emult(u, v, operator = Semirings.TIMES_PLUS)
     @test size(out) == 5
-    @test out.type == INT64
+    @test out.type == SG.INT64
     @test out[1] == 7
     @test out[2] == 9
     @test out[3] == 11
@@ -132,7 +132,7 @@
     v = SG.from_vector(Int64[6,7,8,9,10])
     out = SG.eadd(u, v, operator = Binaryop.TIMES)
     @test size(out) == 5
-    @test out.type == INT64
+    @test out.type == SG.INT64
     @test out[1] == 6
     @test out[2] == 14
     @test out[3] == 24
@@ -144,7 +144,7 @@
     v = SG.from_vector(Int64[6,7,8,9,10])
     out = SG.eadd(u, v, operator = Monoids.TIMES)
     @test size(out) == 5
-    @test out.type == INT64
+    @test out.type == SG.INT64
     @test out[1] == 6
     @test out[2] == 14
     @test out[3] == 24
@@ -156,7 +156,7 @@
     v = SG.from_vector(Int64[6,7,8,9,10])
     out = SG.eadd(u, v, operator = Semirings.TIMES_PLUS)
     @test size(out) == 5
-    @test out.type == INT64
+    @test out.type == SG.INT64
     @test out[1] == 6
     @test out[2] == 14
     @test out[3] == 24
@@ -177,7 +177,7 @@
 
     v = SG.from_vector(Int64[-1,-2,3,-4])
     out = SG.apply(v, unaryop = Unaryop.ABS)
-    @test out.type == INT64
+    @test out.type == SG.INT64
     @test size(v) == size(out)
     @test out[1] == 1
     @test out[2] == 2
@@ -187,7 +187,7 @@
     dup = SG.unaryop(a->a * 2)
     v = SG.from_vector(Int64[1,2,3,4])
     out = SG.apply(v, unaryop = dup)
-    @test out.type == INT64
+    @test out.type == SG.INT64
     @test size(v) == size(out)
     @test out[1] == 2
     @test out[2] == 4
@@ -196,7 +196,7 @@
 
     v = SG.from_vector(Int8[1,2,3,4])
     out = SG.apply(v, unaryop = dup)
-    @test out.type == INT8
+    @test out.type == SG.INT8
     @test size(v) == size(out)
     @test out[1] == 2
     @test out[2] == 4
@@ -205,7 +205,7 @@
 
     v = SG.from_vector(Float64[1,2,3,4])
     out = SG.apply(v, unaryop = dup)
-    @test out.type == FP64
+    @test out.type == SG.FP64
     @test size(v) == size(out)
     @test out[1] == Float64(2)
     @test out[2] == Float64(4)

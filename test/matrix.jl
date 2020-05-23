@@ -2,8 +2,8 @@
 
     # from_type method
     for t in valid_types
-        type = SG.j2gtype(t)
-        matrix_type = SG.matrix_from_type(type, 1, 2)
+        type = SG._gb_type(t)
+        matrix_type = SG.matrix_from_type(t, 1, 2)
         @test matrix_type.type == type
         @test SG.size(matrix_type) == (1, 2)
         I, J, X = SG.findnz(matrix_type)
@@ -15,25 +15,25 @@
     # automatic type inference and size from values list
     I, J, X = [1, 1], [1, 2], Int8[2, 3]
     matrix_filled = SG.matrix_from_lists(I, J, X)
-    @test matrix_filled.type == INT8
+    @test matrix_filled.type == SG.INT8
     @test size(matrix_filled) == (1, 2)
     
     # automatic type inference, nvals and ncols given
     I, J, X = [1, 1], [1, 2], Int8[2, 3]
     matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3)
-    @test matrix_filled.type == INT8
+    @test matrix_filled.type == SG.INT8
     @test size(matrix_filled) == (2, 3)
 
     # passed type parameter
     I, J, X = [1, 1], [1, 2], Int8[2, 3]
-    matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3, type = INT32)
-    @test matrix_filled.type == INT32
+    matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3, type = Int32)
+    @test matrix_filled.type == SG.INT32
     @test size(matrix_filled) == (2, 3)
 
     # combine parameter - default (FIRST)
     I, J, X = [1, 1], [1, 1], Int8[2, 3]
     matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3)
-    @test matrix_filled.type == INT8
+    @test matrix_filled.type == SG.INT8
     @test size(matrix_filled) == (2, 3)
     @test matrix_filled[1,1] == 2
     @test SG.nnz(matrix_filled) == 1
@@ -41,25 +41,24 @@
     # combine parameter - given
     I, J, X = [1, 1], [1, 1], Int8[2, 3]
     matrix_filled = SG.matrix_from_lists(I, J, X, m = 2, n = 3, combine = Binaryop.PLUS)
-    @test matrix_filled.type == INT8
+    @test matrix_filled.type == SG.INT8
     @test size(matrix_filled) == (2, 3)
     @test matrix_filled[1,1] == 5
     @test SG.nnz(matrix_filled) == 1
 
     # square
-    for t in valid_types
-        type = SG.j2gtype(t)
-        matrix_square = SG.matrix_from_type(type, 10, 10)
+    for jl_t in valid_types
+        matrix_square = SG.matrix_from_type(jl_t, 10, 10)
         @test SG.square(matrix_square)
         
-        matrix_not_square = SG.matrix_from_type(type, 10, 11)
+        matrix_not_square = SG.matrix_from_type(jl_t, 10, 11)
         @test !SG.square(matrix_not_square)
     end
 
     # from_matrix
     # int64
     A = SG.from_matrix(Int64[1 2 3; 0 4 5])
-    @test A.type == INT64
+    @test A.type == SG.INT64
     @test size(A) == (2, 3)
     @test A[1,1] == 1 && A[1,2] == 2 && A[1,3] == 3
     @test A[2,1] == 0 && A[2,2] == 4 && A[2,3] == 5
@@ -67,7 +66,7 @@
     
     # bool
     A = SG.from_matrix([true false false; true false true])
-    @test A.type == BOOL
+    @test A.type == SG.BOOL
     @test size(A) == (2, 3)
     @test A[1,1] == true && A[1,2] == false && A[1,3] == false
     @test A[2,1] == true && A[2,2] == false && A[2,3] == true
@@ -75,7 +74,7 @@
 
     # int8
     A = SG.from_matrix(Int8[1 2 3; 0 4 5])
-    @test A.type == INT8
+    @test A.type == SG.INT8
     @test size(A) == (2, 3)
     @test A[1,1] == 1 && A[1,2] == 2 && A[1,3] == 3
     @test A[2,1] == 0 && A[2,2] == 4 && A[2,3] == 5
@@ -83,7 +82,7 @@
 
     # int16
     A = SG.from_matrix(Int16[1 2 3; 0 4 5])
-    @test A.type == INT16
+    @test A.type == SG.INT16
     @test size(A) == (2, 3)
     @test A[1,1] == 1 && A[1,2] == 2 && A[1,3] == 3
     @test A[2,1] == 0 && A[2,2] == 4 && A[2,3] == 5
@@ -91,7 +90,7 @@
 
     # int32
     A = SG.from_matrix(Int32[1 2 3; 0 4 5])
-    @test A.type == INT32
+    @test A.type == SG.INT32
     @test size(A) == (2, 3)
     @test A[1,1] == 1 && A[1,2] == 2 && A[1,3] == 3
     @test A[2,1] == 0 && A[2,2] == 4 && A[2,3] == 5
@@ -99,7 +98,7 @@
 
     # float32
     A = SG.from_matrix(Float32[1.0 2.0 3.0; 0.0 4.0 5.0])
-    @test A.type == FP32
+    @test A.type == SG.FP32
     @test size(A) == (2, 3)
     @test A[1,1] == 1.0 && A[1,2] == 2.0 && A[1,3] == 3.0
     @test A[2,1] == 0.0 && A[2,2] == 4.0 && A[2,3] == 5.0
@@ -107,7 +106,7 @@
 
     # float64
     A = SG.from_matrix(Float64[1.0 2.0 3.0; 0.0 4.0 5.0])
-    @test A.type == FP64
+    @test A.type == SG.FP64
     @test size(A) == (2, 3)
     @test A[1,1] == 1.0 && A[1,2] == 2.0 && A[1,3] == 3.0
     @test A[2,1] == 0.0 && A[2,2] == 4.0 && A[2,3] == 5.0
@@ -116,11 +115,11 @@
 
     # identity
     for s in 1:4
-        for t in valid_types
-            type = SG.j2gtype(t)
+        for jl_t in valid_types
+            gb_type = SG._gb_type(jl_t)
             
-            m = SG.identity(type, s)
-            @test m.type == type
+            m = SG.identity(jl_t, s)
+            @test m.type == gb_type
             @test size(m) == (s, s)
 
             for i in 1:s
@@ -175,7 +174,7 @@
     @test out[1,2] == 10
     @test out[2,1] == 15
     @test out[2,2] == 22
-    @test out.type == INT64
+    @test out.type == SG.INT64
 
     # mxm - default semiring (PLUS_TIMES)
     A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
@@ -185,7 +184,7 @@
     @test out[1,2] == 10
     @test out[2,1] == 15
     @test out[2,2] == 22
-    @test out.type == INT64
+    @test out.type == SG.INT64
 
 
     # mxv
@@ -278,7 +277,7 @@
     # apply
     A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[-1,2,-3,-4])
     out = SG.apply(A, unaryop = Unaryop.ABS)
-    @test out.type == INT64
+    @test out.type == SG.INT64
     @test size(out) == size(A)
     @test out[1,1] == 1
     @test out[1,2] == 2
@@ -288,7 +287,7 @@
     dup = SG.unaryop(a->a * 2, name=:DUP_TEST)
     A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     out = SG.apply(A, unaryop = dup)
-    @test out.type == INT64
+    @test out.type == SG.INT64
     @test size(out) == size(A)
     @test out[1,1] == 2
     @test out[1,2] == 4
@@ -297,16 +296,16 @@
 
     A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4])
     out = SG.apply(A, unaryop = dup)
-    @test out.type == INT8
+    @test out.type == SG.INT8
     @test size(out) == size(A)
     @test out[1,1] == 2
     @test out[1,2] == 4
     @test out[2,1] == 6
     @test out[2,2] == 8
 
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4], type = FP64)
+    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4], type = Float64)
     out = SG.apply(A, unaryop = dup)
-    @test out.type == FP64
+    @test out.type == SG.FP64
     @test size(out) == size(A)
     @test out[1,1] == Float64(2)
     @test out[1,2] == Float64(4)
@@ -318,7 +317,7 @@
 
     A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[-1,2,-3,-4])
     SG.apply!(A, unaryop = Unaryop.ABS)
-    @test A.type == INT64
+    @test A.type == SG.INT64
     @test size(A) == (2, 2)
     @test A[1,1] == 1
     @test A[1,2] == 2
@@ -328,7 +327,7 @@
     # apply! - default unaryop (ABS)
     A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[-1,2,-3,-4])
     SG.apply!(A)
-    @test A.type == INT64
+    @test A.type == SG.INT64
     @test size(A) == (2, 2)
     @test A[1,1] == 1
     @test A[1,2] == 2
@@ -338,7 +337,7 @@
     dup = SG.unaryop(a->a * 2)
     A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     SG.apply!(A, unaryop = dup)
-    @test A.type == INT64
+    @test A.type == SG.INT64
     @test A[1,1] == 2
     @test A[1,2] == 4
     @test A[2,1] == 6
@@ -346,15 +345,15 @@
 
     A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4])
     SG.apply!(A, unaryop = dup)
-    @test A.type == INT8
+    @test A.type == SG.INT8
     @test A[1,1] == 2
     @test A[1,2] == 4
     @test A[2,1] == 6
     @test A[2,2] == 8
 
-    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4], type = FP64)
+    A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int8[1,2,3,4], type = Float64)
     out = SG.apply!(A, unaryop = dup)
-    @test A.type == FP64
+    @test A.type == SG.FP64
     @test A === out
     @test A[1,1] == Float64(2)
     @test A[1,2] == Float64(4)
@@ -678,7 +677,7 @@
     A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     u = A[1:2, 2]
     @test isa(u, SG.GBVector)
-    @test u.type == INT64
+    @test u.type == SG.INT64
     @test size(u) == 2
     @test u[1] == 2
     @test u[2] == 4
@@ -686,7 +685,7 @@
     A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     u = A[2:3, 2]
     @test isa(u, SG.GBVector)
-    @test u.type == INT64
+    @test u.type == SG.INT64
     @test size(u) == 2
     @test u[1] == 4
     @test u[2] == 6
@@ -695,7 +694,7 @@
     A = SG.matrix_from_lists([1,1,2,2], [1,2,1,2], Int64[1,2,3,4])
     u = A[1, 1:2]
     @test isa(u, SG.GBVector)
-    @test u.type == INT64
+    @test u.type == SG.INT64
     @test size(u) == 2
     @test u[1] == 1
     @test u[2] == 2
@@ -703,7 +702,7 @@
     A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     u = A[2, 1:2]
     @test isa(u, SG.GBVector)
-    @test u.type == INT64
+    @test u.type == SG.INT64
     @test size(u) == 2
     @test u[1] == 3
     @test u[2] == 4
@@ -712,7 +711,7 @@
     A = SG.matrix_from_lists([1,1,2,2,3,3], [1,2,1,2,1,2], Int64[1,2,3,4,5,6])
     u = A[:, 1]
     @test isa(u, SG.GBVector)
-    @test u.type == INT64
+    @test u.type == SG.INT64
     @test size(u) == 3
     @test u[1] == 1 && u[2] == 3 && u[3] == 5
 
@@ -721,7 +720,7 @@
     u = A[2:3, 2:3]
     @test isa(u, SG.GBMatrix)
     @test size(u) == (2, 2)
-    @test u.type == INT64
+    @test u.type == SG.INT64
     @test u[1,1] == 5 && u[1,2] == 6
     @test u[2,1] == 8 && u[2,2] == 9
 
@@ -730,7 +729,7 @@
     u = A[[1,3], [1,3]]
     @test isa(u, SG.GBMatrix)
     @test size(u) == (2, 2)
-    @test u.type == INT64
+    @test u.type == SG.INT64
     @test u[1,1] == 1 && u[1,2] == 3
     @test u[2,1] == 7 && u[2,2] == 9
 
