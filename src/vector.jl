@@ -5,7 +5,7 @@ _gb_pointer(m::GBVector) = m.p
 """
     vector_from_type(type, n)
 
-Create an empty GBVector of size `n` from the given type `type`.
+Create an empty `GBVector` of size `n` from the given type `type`.
 
 """
 function vector_from_type(type, n)
@@ -16,22 +16,48 @@ function vector_from_type(type, n)
 end
 
 """
-    vector_from_lists(I, V; n = nothing, type = NULL, combine = NULL)
+    vector_from_lists(I, V; n = nothing, type = nothing, combine = Binaryop.FIRST)
 
-Create a new GBVector from the given lists of indices and values.
+Create a new `GBVector` from the given lists of indices and values.
 If `n` is not provided, it is computed from the max value of the indices list.
 If `type` is not provided, it is inferred from the values list.
-A combiner Binary Operator can be provided to manage duplicates values. If it is not provided, the default `BinaryOp.FIRST` is used.
+A combiner `Binary Operator` can be provided to manage duplicates values. If it is not provided, the default `BinaryOp.FIRST` is used.
 
 # Arguments
 - `I`: the list of indices.
 - `V`: the list of values.
-- `n`: the size of the vector.
-- `type`: the GBType of the GBVector.
+- `[n]`: the size of the vector.
+- `[type]`: the type of the elements of the vector.
 - `combine`: the `BinaryOperator` which assembles any duplicate entries with identical indices.
 
+# Examples
+```julia-repl
+julia> vector_from_lists([1,2,5], [1,4,2])
+5-element GBVector{Int64} with 3 stored entries:
+  [1] = 1
+  [2] = 4
+  [5] = 2
+
+julia> vector_from_lists([1,2,5], [1,4,2], type=Float32)
+5-element GBVector{Float32} with 3 stored entries:
+  [1] = 1.0
+  [2] = 4.0
+  [5] = 2.0
+
+julia> vector_from_lists([1,2,5], [1,4,2], n=10)
+10-element GBVector{Int64} with 3 stored entries:
+  [1] = 1
+  [2] = 4
+  [5] = 2
+
+julia> vector_from_lists([1,2,1,2,5], [1,4,2,4,2], combine=Binaryop.PLUS)
+5-element GBVector{Int64} with 3 stored entries:
+  [1] = 3
+  [2] = 8
+  [5] = 2
+```
 """
-function vector_from_lists(I, V; n = nothing, type = nothing, combine = nothing)
+function vector_from_lists(I, V; n = nothing, type = nothing, combine = Binaryop.FIRST)
     @assert length(I) == length(V) 
     if n === nothing
         n = maximum(I)
@@ -43,9 +69,6 @@ function vector_from_lists(I, V; n = nothing, type = nothing, combine = nothing)
     end
     gb_type = _gb_type(type)
 
-    if combine === nothing
-        combine = Binaryop.FIRST
-    end
     combine_bop = _get(combine, gb_type, gb_type, gb_type)
     I = map(x->x - 1, I)
     v = vector_from_type(type, n)
@@ -58,6 +81,13 @@ end
 
 Create a GBVector from the given Vector `m`.
 
+```julia-repl
+julia> from_vector([1, 0, 0, 1, 2, 0])
+6-element GBVector{Int64} with 3 stored entries:
+  [1] = 1
+  [4] = 1
+  [5] = 2
+```
 """
 function from_vector(V)
     size = length(V)
@@ -169,6 +199,22 @@ end
 
 Create a copy of `v`.
 
+# Examples
+```julia-repl
+julia> v = from_vector([1, 0, 0, 1, 2, 0]);
+
+julia> u = copy(v)
+6-element GBVector{Int64} with 3 stored entries:
+  [1] = 1
+  [4] = 1
+  [5] = 2
+
+julia> u == v
+true
+
+julia> u === v
+false
+```
 """
 function copy(v::GBVector{T}) where T
     cpy = vector_from_type(T, size(v))
@@ -254,7 +300,6 @@ julia> emult(u, v, operator = Binaryop.PLUS)
   [2] = 4
   [3] = 6
   [4] = 8
-
 ```
 """
 function emult(u::GBVector{T}, v::GBVector{U}; kwargs...) where {T,U}
@@ -313,7 +358,6 @@ julia> emult(u, v, operator = Binaryop.TIMES)
   [2] = 4
   [3] = 9
   [4] = 16
-
 ```
 """
 function eadd(u::GBVector{T}, v::GBVector{U}; kwargs...) where {T,U}
@@ -368,7 +412,6 @@ julia> vxm(u, A, semiring = Semirings.PLUS_TIMES)
 2-element GBVector{Int64} with 2 stored entries:
   [1] = 7
   [2] = 10
-
 ```
 """
 function vxm(u::GBVector{T}, A::GBMatrix{U}; kwargs...) where {T,U}
@@ -421,7 +464,6 @@ julia> apply(u, unaryop = Unaryop.ABS)
   [1] = 1
   [2] = 2
   [3] = 3
-
 ```
 """
 function apply(u::GBVector{T}; kwargs...) where T
@@ -472,7 +514,6 @@ julia> u
   [1] = 1
   [2] = 2
   [3] = 3
-
 ```
 """
 function apply!(u::GBVector; kwargs...)
@@ -522,7 +563,7 @@ function reduce(u::GBVector{T}; kwargs...) where T
     return scalar[]
 end
 
-function _extract(u::GBVector{T}, indices::Vector{I}; kwargs...) where {T, I <: Union{UInt64,Int64}}
+function _extract(u::GBVector{T}, indices::Vector{I}; kwargs...) where {T,I <: Union{UInt64,Int64}}
     ni = length(indices)
     @assert ni > 0
 

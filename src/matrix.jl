@@ -4,7 +4,7 @@ import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix
 """
     matrix_from_type(type, m, n)
 
-Create an empty GBMatrix of size m×n from the given type `type`.
+Create an empty `GBMatrix` of size `m`×`n` from the given type `type`.
 
 """
 function matrix_from_type(type, m, n)
@@ -15,24 +15,53 @@ function matrix_from_type(type, m, n)
 end
 
 """
-    matrix_from_lists(I, J, V; m = nothing, n = nothing, type = nothing, combine = nothing)
+    matrix_from_lists(I, J, V; m = nothing, n = nothing, type = nothing, combine = Binaryop.FIRST)
 
-Create a new GBMatrix from the given lists of row indices, column indices and values.
+Create a new `GBMatrix` from the given lists of row indices, column indices and values.
 If `m` and `n` are not provided, they are computed from the max values of the row and column indices lists, respectively.
 If `type` is not provided, it is inferred from the values list.
-A combiner Binary Operator can be provided to manage duplicates values. If it is not provided, the default `BinaryOp.FIRST` is used.
+A combiner `Binary Operator` can be provided to manage duplicates values. If it is not provided, the default `BinaryOp.FIRST` is used.
 
 # Arguments
 - `I`: the list of row indices.
 - `J`: the list of column indices.
 - `V`: the list of values.
-- `m`: the number of rows.
-- `n`: the number of columns.
-- `type`: the GBType of the GBMatrix.
-- `combine`: the `BinaryOperator` which assembles any duplicate entries with identical indices.
+- `[m]`: the number of rows.
+- `[n]`: the number of columns.
+- `[type]`: the type of the elements of the matrix.
+- `[combine]`: the `BinaryOperator` which assembles any duplicate entries with identical indices.
 
+# Examples
+```julia-repl
+julia> matrix_from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4])
+3x2 GBMatrix{Int64} with 4 stored entries:
+  [1, 1] = 5
+  [1, 2] = 2
+  [2, 2] = 7
+  [3, 2] = 4
+
+julia> matrix_from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4], type=Float64)
+3x2 GBMatrix{Float64} with 4 stored entries:
+  [1, 1] = 5.0
+  [1, 2] = 2.0
+  [2, 2] = 7.0
+  [3, 2] = 4.0
+
+julia> matrix_from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4], m=10, n=4)
+10x4 GBMatrix{Int64} with 4 stored entries:
+  [1, 1] = 5
+  [1, 2] = 2
+  [2, 2] = 7
+  [3, 2] = 4
+
+julia> A = matrix_from_lists([1,1,2,3],[1,1,2,2], [5,2,7,4], combine=Binaryop.PLUS)
+3x2 GBMatrix{Int64} with 3 stored entries:
+  [1, 1] = 7
+  [2, 2] = 7
+  [3, 2] = 4
+```
 """
-function matrix_from_lists(I, J, V; m = nothing, n = nothing, type = nothing, combine = nothing)
+function matrix_from_lists(I, J, V; m = nothing, n = nothing, type = nothing, combine = Binaryop.FIRST)
     @assert length(I) == length(J) == length(V)
     if m === nothing
         m = maximum(I)
@@ -48,9 +77,6 @@ function matrix_from_lists(I, J, V; m = nothing, n = nothing, type = nothing, co
     gb_type = _gb_type(type)
     m = matrix_from_type(type, m, n)
 
-    if combine === nothing
-        combine = Binaryop.FIRST
-    end
     combine_bop = _get(combine, gb_type, gb_type, gb_type)
     I = map(x->x - 1, I)
     J = map(x->x - 1, J)
@@ -61,8 +87,17 @@ end
 """
     from_matrix(m)
 
-Create a GBMatrix from the given Matrix `m`.
+Create a `GBMatrix` from the given `Matrix` `m`.
 
+# Examples
+```julia-repl
+julia> from_matrix([1 0 2; 0 0 3; 0 1 0])
+3x3 GBMatrix{Int64} with 4 stored entries:
+  [1, 1] = 1
+  [1, 3] = 2
+  [2, 3] = 3
+  [3, 2] = 1
+```
 """
 function from_matrix(m)
     r, c = size(m)
@@ -85,8 +120,17 @@ end
 """
     identity(type, n)
 
-Create an identity GBMatrix of size n×n with the given type `type`.
+Create an identity `GBMatrix` of size `n`×`n` with the given type `type`.
 
+# Examples
+```julia-repl
+julia> identity(Bool, 4)
+4x4 GBMatrix{Bool} with 4 stored entries:
+  [1, 1] = true
+  [2, 2] = true
+  [3, 3] = true
+  [4, 4] = true
+```
 """
 function identity(type, n)
     res = matrix_from_type(type, n, n)
@@ -97,9 +141,9 @@ function identity(type, n)
 end
 
 """
-    Matrix(A::GBMatrix{T})
+    Matrix(A::GBMatrix{T}) -> Matrix{T}
 
-Construct a Matrix{T} from a GBMatrix{T} A.
+Construct a `Matrix{T}` from a `GBMatrix{T}` A.
 
 """
 function Matrix(A::GBMatrix{T}) where T
@@ -207,6 +251,24 @@ end
 
 Create a copy of `m`.
 
+# Examples
+```julia-repl
+julia> A = from_matrix([1 0 1; 0 0 2; 2 0 1]);
+
+julia> B = copy(A)
+3x3 GBMatrix{Int64} with 5 stored entries:
+  [1, 1] = 1
+  [1, 3] = 1
+  [2, 3] = 2
+  [3, 1] = 2
+  [3, 3] = 1
+
+julia> A == B
+true
+
+julia> A === B
+false
+```
 """
 function copy(m::GBMatrix{T}) where T
     cpy = matrix_from_type(T, size(m)...)
@@ -356,7 +418,6 @@ julia> mxm(A, B, semiring = Semirings.PLUS_TIMES)
   [1, 2] = 10
   [2, 1] = 15
   [2, 2] = 22
-
 ```
 """
 function mxm(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
@@ -416,7 +477,6 @@ julia> mxv(A, u, semiring = Semirings.PLUS_TIMES)
 2-element GBVector{Int64} with 2 stored entries:
   [1] = 5
   [2] = 11
-
 ```
 """
 function mxv(A::GBMatrix{T}, u::GBVector{U}; kwargs...) where {T,U}
@@ -462,7 +522,7 @@ If given a `Semiring`, the multiply operator of the semiring is used as the mult
 - `A`: the first matrix.
 - `B`: the second matrix.
 - `[out]`: the output matrix for result.
-- `[operator]`: the operator to use. Can be either a Binary Operator, or a Monoid or a Semiring.
+- `[operator]`: the operator to use. Can be either a `Binary Operator`, or a `Monoid` or a `Semiring`.
 - `[accum]`: optional accumulator.
 - `[mask]`: optional mask.
 - `[desc]`: descriptor for `out`, `mask`, `A` and `B`.
@@ -479,7 +539,6 @@ julia> emult(A, B, operator = Binaryop.PLUS)
   [1, 2] = 4
   [2, 1] = 6
   [2, 2] = 8
-
 ```
 """
 function emult(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
@@ -544,7 +603,6 @@ julia> eadd(A, B, operator = Binaryop.TIMES)
   [1, 2] = 4
   [2, 1] = 9
   [2, 2] = 16
-
 ```
 """
 function eadd(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
@@ -604,7 +662,6 @@ julia> apply(A, unaryop = Unaryop.ABS)
   [1, 2] = 2
   [2, 1] = 3
   [2, 2] = 4
-
 ```
 """
 function apply(A::GBMatrix{T}; kwargs...) where T
@@ -660,7 +717,6 @@ julia> A
   [1, 2] = 2
   [2, 1] = 3
   [2, 2] = 4
-
 ```
 """
 function apply!(A::GBMatrix; kwargs...)
@@ -736,7 +792,6 @@ julia> reduce_vector(A, operator = Binaryop.PLUS)
 2-element GBVector{Int64} with 2 stored entries:
   [1] = 3
   [2] = 7
-
 ```
 """
 function reduce_vector(A::GBMatrix{T}; kwargs...) where T
@@ -840,7 +895,6 @@ julia> transpose(A)
   [2, 2] = 5
   [3, 1] = 3
   [3, 2] = 6
-
 ```
 """
 function transpose(A::GBMatrix{T}; kwargs...) where T
@@ -898,7 +952,6 @@ julia> Matrix(kron(A, B, binaryop = Binaryop.TIMES))
  3   4   6   8
  3   6   4   8
  9  12  12  16
-
 ```
 """
 function kron(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
@@ -929,7 +982,6 @@ function kron(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
     
     return out
 end
-
 
 function __extract_col__(A::GBMatrix{T}, col, pointer_rows, ni; out = NULL, mask = NULL, accum = NULL, desc = NULL) where T
     @assert ni > 0
