@@ -18,7 +18,7 @@ emult(::GBMatrix, ::GBMatrix)
 eadd(::GBMatrix, ::GBMatrix)
 apply(::GBMatrix)
 apply!(::GBMatrix)
-select(::GBMatrix, _)
+select(::GBMatrix, ::SelectOperator)
 reduce_vector
 reduce_scalar
 transpose

@@ -60,14 +60,14 @@ export GraphBLASNoValueException,
        GraphBLASPanicException
 
 # export matrix operations
-export matrix_from_type, matrix_from_lists, from_matrix, identity, square, findnz, nnz, clear!,
+export from_type, from_lists, from_matrix, identity, square, findnz, nnz, clear!,
     mxm, mxv, emult, eadd, apply, apply!, select, reduce_vector, reduce_scalar, transpose, kron
 
 # export vector operations
-export vector_from_type, vector_from_lists, from_vector, vxm, reduce
+export from_vector, vxm, reduce
 
 export @with
 
-export GBMatrix, GBVector
+export GBMatrix, GBVector, SelectOperator
 
 end # end of module

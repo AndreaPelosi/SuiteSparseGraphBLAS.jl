@@ -1,4 +1,4 @@
-import Base: size, copy, lastindex, setindex!, getindex, show, ==, *, Broadcast.broadcasted, |>, reduce
+import Base: size, copy, lastindex, setindex!, getindex, show, ==, *, Broadcast.broadcasted, |>, reduce, Vector
 
 _gb_pointer(m::GBVector) = m.p
 
@@ -102,13 +102,32 @@ function from_vector(V)
     return res
 end
 
+function show(io::IO, v::GBVector)
+    for (i, x) in zip(findnz(v)...)
+        println(io, "  [$i] = $x")
+    end
+end
+
 function show(io::IO, ::MIME"text/plain", v::GBVector{T}) where T
     print(io, "$(Int64(size(v)))-element GBVector{$(T)} ")
     println(io, "with $(nnz(v)) stored entries:")
+    show(io, v)
+end
 
-    for (i, x) in zip(findnz(v)...)
-        println("  [$i] = $x")
+"""
+    Vector(A::GBVector{T}) -> Vector{T}
+
+Construct a `Vector{T}` from a `GBVector{T}` A.
+
+"""
+function Vector(u::GBVector{T}) where T
+    n = size(u)
+    res = Vector{T}(undef, n)
+    
+    for i in 1:n
+        res[i] = u[i]
     end
+    return res
 end
 
 """

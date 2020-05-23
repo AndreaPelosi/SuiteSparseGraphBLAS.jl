@@ -33,28 +33,28 @@ A combiner `Binary Operator` can be provided to manage duplicates values. If it 
 
 # Examples
 ```julia-repl
-julia> from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4])
+julia> from_lists([1,1,2,3], [1,2,2,2], [5,2,7,4])
 3x2 GBMatrix{Int64} with 4 stored entries:
   [1, 1] = 5
   [1, 2] = 2
   [2, 2] = 7
   [3, 2] = 4
 
-julia> from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4], type=Float64)
+julia> from_lists([1,1,2,3], [1,2,2,2], [5,2,7,4], type=Float64)
 3x2 GBMatrix{Float64} with 4 stored entries:
   [1, 1] = 5.0
   [1, 2] = 2.0
   [2, 2] = 7.0
   [3, 2] = 4.0
 
-julia> from_lists([1,1,2,3],[1,2,2,2], [5,2,7,4], m=10, n=4)
+julia> from_lists([1,1,2,3], [1,2,2,2], [5,2,7,4], m=10, n=4)
 10x4 GBMatrix{Int64} with 4 stored entries:
   [1, 1] = 5
   [1, 2] = 2
   [2, 2] = 7
   [3, 2] = 4
 
-julia> A = from_lists([1,1,2,3],[1,1,2,2], [5,2,7,4], combine=Binaryop.PLUS)
+julia> A = from_lists([1,1,2,3], [1,1,2,2], [5,2,7,4], combine=Binaryop.PLUS)
 3x2 GBMatrix{Int64} with 3 stored entries:
   [1, 1] = 7
   [2, 2] = 7
@@ -158,15 +158,16 @@ function Matrix(A::GBMatrix{T}) where T
     return res
 end
 
-function show(io::IO, ::MIME"text/plain", M::GBMatrix{T}) where T
-    s = size(M)
-
-    print(io, "$(Int64(s[1]))x$(Int64(s[2])) GBMatrix{$(T)} ")
-    println(io, "with $(nnz(M)) stored entries:")
-
+function show(io::IO, M::GBMatrix)
     for (i, j, x) in zip(findnz(M)...)
-        println("  [$i, $j] = $x")
+        println(io, "  [$i, $j] = $x")
     end
+end
+
+function show(io::IO, ::MIME"text/plain", M::GBMatrix{T}) where T
+    print(io, "$(Int64(size(M, 1)))x$(Int64(size(M, 2))) GBMatrix{$(T)} ")
+    println(io, "with $(nnz(M)) stored entries:")
+    show(io, M)
 end
 
 """
