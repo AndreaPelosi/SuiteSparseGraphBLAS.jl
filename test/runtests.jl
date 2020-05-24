@@ -3,8 +3,6 @@ using Test
 
 SG = SuiteSparseGraphBLAS
 
-SG.GrB_init(0)
-
 const testdir = dirname(@__FILE__)
 
 tests = [

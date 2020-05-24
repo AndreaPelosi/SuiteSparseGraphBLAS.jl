@@ -197,6 +197,8 @@ end
 
 broadcasted(::typeof(+), A::GBMatrix, B::GBMatrix) = eadd(A, B)
 broadcasted(::typeof(*), A::GBMatrix, B::GBMatrix) = emult(A, B)
+broadcasted(::typeof(+), A::GBMatrix, u::GBVector) = eadd_matrix_vector(A, u)
+broadcasted(::typeof(*), A::GBMatrix, u::GBVector) = emult_matrix_vector(A, u)
 
 |>(A::GBMatrix, op::UnaryOperator) = apply(A, unaryop = op)
 
@@ -637,6 +639,40 @@ function eadd(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
             )
         )
     
+    return out
+end
+
+function eadd_matrix_vector(A::GBMatrix{T}, u::GBVector{T}; kwargs...) where T
+    Asize = size(A)
+    @assert Asize[1] == size(u)
+
+    out, operator, mask, accum, desc = __get_args(kwargs)
+
+    if out === NULL
+        out = from_type(T, size(A)...)
+    end
+    
+    for i in 1:Asize[2]
+        out[:, i] = eadd(A[:, i], u, operator=operator, mask=mask, accum=accum, desc=desc)
+    end    
+
+    return out
+end
+
+function emult_matrix_vector(A::GBMatrix{T}, u::GBVector{T}; kwargs...) where T
+    Asize = size(A)
+    @assert Asize[1] == size(u)
+
+    out, operator, mask, accum, desc = __get_args(kwargs)
+
+    if out === NULL
+        out = from_type(T, size(A)...)
+    end
+    
+    for i in 1:Asize[2]
+        out[:, i] = emult(A[:, i], u, operator=operator, mask=mask, accum=accum, desc=desc)
+    end    
+
     return out
 end
 

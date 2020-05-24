@@ -39,6 +39,8 @@ function __init__()
                           binaryop = Binaryop.PLUS,
                           monoid = Monoids.PLUS,
                           semiring = Semirings.PLUS_TIMES)
+                      
+    GrB_init(0)
     
 end
 
