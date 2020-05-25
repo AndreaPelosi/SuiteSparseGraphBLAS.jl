@@ -159,9 +159,43 @@ function Matrix(A::GBMatrix{T}) where T
 end
 
 function show(io::IO, M::GBMatrix)
-    for (i, j, x) in zip(findnz(M)...)
-        println(io, "  [$i, $j] = $x")
+
+    function _print(tuples, pad_i, pad_j)
+        count = 1
+        size = length(tuples)
+        for (i, j, x) in tuples
+            print(io, "  [$(lpad(i, pad_i)), $(lpad(j, pad_j))] = $x")
+            if count != size 
+                println(io)
+            end
+            count += 1
+        end
     end
+
+    function padding(iter)
+        local last = first(Iterators.drop(iter, length(iter)-1))
+        return length(string(last[1])), length(string(last[2]))
+    end
+    
+
+    maxHeight = displaysize(io)[1] - 5              # prompt, header, ..., newline, prompt    
+    tuples = zip(findnz(M)...)
+    pad = padding(tuples)
+
+    if length(tuples) > maxHeight
+        firstHalfCount = Int64(floor(maxHeight / 2))
+        secondHalfCount = maxHeight - firstHalfCount
+        
+        firstHalf = Iterators.take(tuples, firstHalfCount)
+        secondHalf = Iterators.drop(tuples, length(tuples)-secondHalfCount)
+
+        _print(firstHalf, pad...)
+        println(io, "\n  ⋮")
+        _print(secondHalf, pad...)
+    else
+        _print(tuples, pad...)
+    end
+
 end
 
 function show(io::IO, ::MIME"text/plain", M::GBMatrix{T}) where T
