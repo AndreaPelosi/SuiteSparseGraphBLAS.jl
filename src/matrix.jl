@@ -174,7 +174,7 @@ function __print_sparse(io, print_elem, padding_fun, S)
         println(io, "\n  ⋮")
         print_elem(secondHalf, pad)
     else
-        print_elem(tuples, pad...)
+        print_elem(tuples, pad)
     end
 
 end
