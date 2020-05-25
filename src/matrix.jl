@@ -158,13 +158,34 @@ function Matrix(A::GBMatrix{T}) where T
     return res
 end
 
+function __print_sparse(io, print_elem, padding_fun, S)
+    maxHeight = displaysize(io)[1] - 5              # prompt, header, ..., newline, prompt    
+    tuples = zip(findnz(S)...)
+    pad = padding_fun(tuples)
+
+    if length(tuples) > maxHeight
+        firstHalfCount = Int64(floor(maxHeight / 2))
+        secondHalfCount = maxHeight - firstHalfCount
+        
+        firstHalf = Iterators.take(tuples, firstHalfCount)
+        secondHalf = Iterators.drop(tuples, length(tuples)-secondHalfCount)
+
+        print_elem(firstHalf, pad)
+        println(io, "\n  ⋮")
+        print_elem(secondHalf, pad)
+    else
+        print_elem(tuples, pad...)
+    end
+
+end
+
 function show(io::IO, M::GBMatrix)
 
-    function _print(tuples, pad_i, pad_j)
+    function _print(tuples, pad)
         count = 1
         size = length(tuples)
         for (i, j, x) in tuples
-            print(io, "  [$(lpad(i, pad_i)), $(lpad(j, pad_j))] = $x")
+            print(io, "  [$(lpad(i, pad[1])), $(lpad(j, pad[2]))] = $x")
             if count != size 
                 println(io)
             end
@@ -177,24 +198,7 @@ function show(io::IO, M::GBMatrix)
         return length(string(last[1])), length(string(last[2]))
     end
     
-
-    maxHeight = displaysize(io)[1] - 5              # prompt, header, ..., newline, prompt    
-    tuples = zip(findnz(M)...)
-    pad = padding(tuples)
-
-    if length(tuples) > maxHeight
-        firstHalfCount = Int64(floor(maxHeight / 2))
-        secondHalfCount = maxHeight - firstHalfCount
-        
-        firstHalf = Iterators.take(tuples, firstHalfCount)
-        secondHalf = Iterators.drop(tuples, length(tuples)-secondHalfCount)
-
-        _print(firstHalf, pad...)
-        println(io, "\n  ⋮")
-        _print(secondHalf, pad...)
-    else
-        _print(tuples, pad...)
-    end
+    __print_sparse(io, _print, padding, M)
 
 end
 

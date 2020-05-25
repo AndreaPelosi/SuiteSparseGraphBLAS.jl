@@ -103,9 +103,26 @@ function from_vector(V)
 end
 
 function show(io::IO, v::GBVector)
-    for (i, x) in zip(findnz(v)...)
-        println(io, "  [$i] = $x")
+
+    function _print(tuples, pad)
+        count = 1
+        size = length(tuples)
+        for (i, x) in tuples
+            print(io, "  [$(lpad(i, pad))] = $x")
+            if count != size 
+                println(io)
+            end
+            count += 1
+        end
     end
+
+    function padding(iter)
+        local last = first(Iterators.drop(iter, length(iter)-1))
+        return length(string(last[1]))
+    end
+
+    __print_sparse(io, _print, padding, v)
+    
 end
 
 function show(io::IO, ::MIME"text/plain", v::GBVector{T}) where T
