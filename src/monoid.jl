@@ -27,7 +27,7 @@ function monoid(bin_op::BinaryOperator, identity::T; name::Union{Symbol,Nothing}
             @eval(Monoids, export $name)
         end
     else
-        monoid = Monoids(string(name))
+        monoid = Monoid(string(name))
     end
     index = findfirst(mon->mon.domain == domain, monoid.impl)
     if index === nothing
