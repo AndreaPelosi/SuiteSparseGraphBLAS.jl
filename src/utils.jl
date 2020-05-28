@@ -95,10 +95,10 @@ macro with(env, block)
         # change and store default operators
         old_op = []
 
-        if !($env isa Tuple)
-            operators = tuple($env)
+        if !($(esc(env)) isa Tuple)
+            operators = tuple($(esc(env)))
         else
-            operators = $env
+            operators = $(esc(env))
         end
 
         for op in operators
