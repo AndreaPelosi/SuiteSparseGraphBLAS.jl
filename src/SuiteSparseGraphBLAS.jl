@@ -38,7 +38,8 @@ function __init__()
     global g_operators = (unaryop = Unaryop.ABS,
                           binaryop = Binaryop.PLUS,
                           monoid = Monoids.PLUS,
-                          semiring = Semirings.PLUS_TIMES)
+                          semiring = Semirings.PLUS_TIMES,
+                          mask = NULL)
                       
     GrB_init(0)
     
@@ -70,7 +71,7 @@ export from_vector, vxm, reduce
 
 export @with
 
-export GBMatrix, GBVector, SelectOperator, UnaryOperator, BinaryOperator, Monoid, Semiring
+export GBMatrix, GBVector, SelectOperator, UnaryOperator, BinaryOperator, Monoid, Semiring, Mask
 
 export unaryop, binaryop, monoid, semiring, descriptor
 

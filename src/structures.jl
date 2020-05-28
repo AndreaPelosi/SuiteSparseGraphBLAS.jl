@@ -109,3 +109,11 @@ _gb_pointer(desc::Descriptor) = desc.p
 
 # default methods operators
 g_operators = nothing
+
+
+function __enter__(mask::GBMatrix{Bool})
+    global g_operators
+    old = g_operators.mask
+    g_operators = Base.setindex(g_operators, mask, :mask)
+    return (mask=old,)
+end
