@@ -185,10 +185,7 @@ function show(io::IO, M::GBMatrix)
         count = 1
         size = length(tuples)
         for (i, j, x) in tuples
-            print(io, "  [$(lpad(i, pad[1])), $(lpad(j, pad[2]))] = $x")
-            if count != size 
-                println(io)
-            end
+            print(io, "\n  [$(lpad(i, pad[1])), $(lpad(j, pad[2]))] = $x")
             count += 1
         end
     end
@@ -203,9 +200,12 @@ function show(io::IO, M::GBMatrix)
 end
 
 function show(io::IO, ::MIME"text/plain", M::GBMatrix{T}) where T
+    elem = nnz(M)
     print(io, "$(Int64(size(M, 1)))x$(Int64(size(M, 2))) GBMatrix{$(T)} ")
-    println(io, "with $(nnz(M)) stored entries:")
-    show(io, M)
+    print(io, "with $(elem) stored entries:")
+    if elem != 0
+        show(io, M)
+    end
 end
 
 """
