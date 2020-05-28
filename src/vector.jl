@@ -471,7 +471,13 @@ function vxm(u::GBVector{T}, A::GBMatrix{U}; kwargs...) where {T,U}
     if semiring === NULL
         semiring = g_operators.semiring
     end
-    semiring_impl = _get(semiring, out.type, u.type, A.type)
+    
+    local semiring_impl
+    try
+        semiring_impl = _get(semiring, out.type, u.type, A.type)
+    catch e
+        semiring_impl = _get(semiring, out.type, u.type, u.type)
+    end
 
     if mask === NULL
         mask = g_operators.mask
