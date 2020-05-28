@@ -152,6 +152,56 @@ function GrB_Vector_setElement(w::GBVector{Float32}, x::Float32, i::Union{Int64,
         )
 end
 
+function GrB_assign(v::GBVector{T}, x::T, i::Union{Vector{I}, GAllTypes}, mask, accum, desc) where {T, I <: Union{Int64, UInt64}}
+    suffix = _gb_type(T).name
+    
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Vector_assign_" * suffix),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cintmax_t, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(v), _gb_pointer(mask), _gb_pointer(accum), x,
+            pointer(i), length(i), _gb_pointer(desc)
+            )
+        )
+end
+
+function GrB_assign(v::GBVector{UInt64}, x::UInt64, i::Union{Vector{I}, GAllTypes}, mask, accum, desc) where I <: Union{Int64, UInt64}
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Vector_assign_UINT64"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(v), _gb_pointer(mask), _gb_pointer(accum), x,
+            pointer(i), length(i), _gb_pointer(desc)
+            )
+        )
+end
+
+function GrB_assign(v::GBVector{Float32}, x::Float32, i::Union{Vector{I}, GAllTypes}, mask, accum, desc) where I <: Union{Int64, UInt64}
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Vector_assign_FP32"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cfloat, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(v), _gb_pointer(mask), _gb_pointer(accum), x,
+            pointer(i), length(i), _gb_pointer(desc)
+            )
+        )
+end
+
+function GrB_assign(v::GBVector{Float64}, x::Float64, i::Union{Vector{I}, GAllTypes}, mask, accum, desc) where I <: Union{Int64, UInt64}
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Vector_assign_FP64"),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cdouble, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(v), _gb_pointer(mask), _gb_pointer(accum), x,
+            pointer(i), length(i), _gb_pointer(desc)
+            )
+        )
+end
+
 function GrB_Vector_setElement(w::GBVector{Float64}, x::Float64, i::Union{Int64,UInt64})
     fn_name = "GrB_Vector_setElement_FP64"
     check(

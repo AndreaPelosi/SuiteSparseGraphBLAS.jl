@@ -642,6 +642,16 @@ function _extract(u::GBVector{T}, indices::Vector{I}; kwargs...) where {T,I <: U
     return out
 end
 
+function _assign!(u::GBVector{T}, v::T, indices::Union{Vector{I},GAllTypes}; kwargs...) where {T, I <: Union{UInt64,Int64}}
+    _, _, mask, accum, desc = __get_args(kwargs)
+    
+    if mask === NULL
+        mask = g_operators.mask
+    end
+
+    GrB_assign(u, v, indices, mask, accum, desc)
+end
+
 function _assign!(u::GBVector, v::GBVector, indices::Union{Vector{I},GAllTypes}; kwargs...) where I <: Union{UInt64,Int64}
     _, _, mask, accum, desc = __get_args(kwargs)
 
