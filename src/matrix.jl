@@ -168,7 +168,7 @@ function __print_sparse(io, print_elem, padding_fun, S)
         secondHalfCount = maxHeight - firstHalfCount
         
         firstHalf = Iterators.take(tuples, firstHalfCount)
-        secondHalf = Iterators.drop(tuples, length(tuples)-secondHalfCount)
+        secondHalf = Iterators.drop(tuples, length(tuples) - secondHalfCount)
 
         print_elem(firstHalf, pad)
         println(io, "\n  ⋮")
@@ -194,7 +194,7 @@ function show(io::IO, M::GBMatrix)
     end
 
     function padding(iter)
-        local last = first(Iterators.drop(iter, length(iter)-1))
+        local last = first(Iterators.drop(iter, length(iter) - 1))
         return length(string(last[1])), length(string(last[2]))
     end
     
@@ -393,11 +393,15 @@ end
 setindex!(m::GBMatrix, value, i::Colon, j::Integer) = _assign_col!(m, value, j - 1, ALL)
 setindex!(m::GBMatrix, value, i::Integer, j::Colon) = _assign_row!(m, value, i - 1, ALL)
 setindex!(m::GBMatrix, value, i::Colon, j::Colon) = 
+    _assign!(m, value, ALL, ALL)
+setindex!(m::GBMatrix, value::GBMatrix, i::Colon, j::Colon) = 
     _assign_matrix!(m, value, ALL, ALL)
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Integer) = 
     _assign_col!(m, value, j - 1, _zero_based_indexes(i))
 setindex!(m::GBMatrix, value, i::Integer, j::Union{UnitRange,Vector}) = 
     _assign_row!(m, value, i - 1, _zero_based_indexes(j))
+setindex!(m::GBMatrix{T}, value::T, i::Union{UnitRange,Vector}, j::Union{UnitRange,Vector}) where T =
+    _assign!(m, value, _zero_based_indexes(i), _zero_based_indexes(j))
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Union{UnitRange,Vector}) =
     _assign_matrix!(m, value, _zero_based_indexes(i), _zero_based_indexes(j))
 setindex!(m::GBMatrix, value, i::Union{UnitRange,Vector}, j::Colon) =
@@ -481,6 +485,10 @@ function mxm(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
         accum = _get(accum)
     end
 
+    if mask === NULL
+        mask = g_operators.mask
+    end
+
     check(
         ccall(
             dlsym(graphblas_lib, "GrB_mxm"),
@@ -537,6 +545,10 @@ function mxv(A::GBMatrix{T}, u::GBVector{U}; kwargs...) where {T,U}
     
     if accum !== NULL
         accum = _get(accum)
+    end
+
+    if mask === NULL
+        mask = g_operators.mask
     end
 
     check(
@@ -599,6 +611,10 @@ function emult(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
 
     if accum !== NULL
         accum = _get(accum)
+    end
+
+    if mask === NULL
+        mask = g_operators.mask
     end
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
@@ -665,6 +681,10 @@ function eadd(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
         accum = _get(accum)
     end
 
+    if mask === NULL
+        mask = g_operators.mask
+    end
+
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
     check(
@@ -689,9 +709,13 @@ function eadd_matrix_vector(A::GBMatrix{T}, u::GBVector{T}; kwargs...) where T
     if out === NULL
         out = from_type(T, size(A)...)
     end
+
+    if mask === NULL
+        mask = g_operators.mask
+    end
     
     for i in 1:Asize[2]
-        out[:, i] = eadd(A[:, i], u, operator=operator, mask=mask, accum=accum, desc=desc)
+        out[:, i] = eadd(A[:, i], u, operator = operator, mask = mask, accum = accum, desc = desc)
     end    
 
     return out
@@ -706,9 +730,13 @@ function emult_matrix_vector(A::GBMatrix{T}, u::GBVector{T}; kwargs...) where T
     if out === NULL
         out = from_type(T, size(A)...)
     end
+
+    if mask === NULL
+        mask = g_operators.mask
+    end
     
     for i in 1:Asize[2]
-        out[:, i] = emult(A[:, i], u, operator=operator, mask=mask, accum=accum, desc=desc)
+        out[:, i] = emult(A[:, i], u, operator = operator, mask = mask, accum = accum, desc = desc)
     end    
 
     return out
@@ -753,6 +781,10 @@ function apply(A::GBMatrix{T}; kwargs...) where T
 
     if accum !== NULL
         accum = _get(accum)
+    end
+
+    if mask === NULL
+        mask = g_operators.mask
     end
 
     check(
@@ -830,6 +862,10 @@ function select(A::GBMatrix{T}, op::SelectOperator; kwargs...) where T
     if accum === NULL
         accum = _get(accum)
     end
+
+    if mask === NULL
+        mask = g_operators.mask
+    end
     
     check(
         ccall(
@@ -884,6 +920,10 @@ function reduce_vector(A::GBMatrix{T}; kwargs...) where T
 
     if accum !== NULL
         accum = _get(accum)
+    end
+
+    if mask === NULL
+        mask = g_operators.mask
     end
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
@@ -983,6 +1023,10 @@ function transpose(A::GBMatrix{T}; kwargs...) where T
         accum = _get(accum)
     end
 
+    if mask === NULL
+        mask = g_operators.mask
+    end
+
     check(
         ccall(
             dlsym(graphblas_lib, "GrB_transpose"),
@@ -1045,6 +1089,10 @@ function kron(A::GBMatrix{T}, B::GBMatrix{U}; kwargs...) where {T,U}
         accum = _get(accum)
     end
 
+    if mask === NULL
+        mask = g_operators.mask
+    end
+
     check(
         ccall(
             dlsym(graphblas_lib, "GxB_kron"),
@@ -1067,6 +1115,10 @@ function __extract_col__(A::GBMatrix{T}, col, pointer_rows, ni; out = NULL, mask
 
     if accum !== NULL
         accum = _get(accum)
+    end
+
+    if mask === NULL
+        mask = g_operators.mask
     end
 
     check(
@@ -1106,6 +1158,10 @@ function __extract_matrix__(A::GBMatrix{T}, pointer_rows, pointer_cols, ni, nj; 
         accum = _get(accum)
     end
 
+    if mask === NULL
+        mask = g_operators.mask
+    end
+
     check(
         ccall(
             dlsym(graphblas_lib, "GrB_Matrix_extract"),
@@ -1136,6 +1192,10 @@ function _assign_row!(A::GBMatrix, u::GBVector, row::I, cols::Union{Vector{I},GA
         accum = _get(accum)
     end
 
+    if mask === NULL
+        mask = g_operators.mask
+    end
+
     check(
         ccall(
             dlsym(graphblas_lib, "GxB_Row_subassign"),
@@ -1153,6 +1213,10 @@ function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GA
         accum = _get(accum)
     end
 
+    if mask === NULL
+        mask = g_operators.mask
+    end
+
     check(
         ccall(
             dlsym(graphblas_lib, "GxB_Col_subassign"),
@@ -1165,9 +1229,25 @@ function _assign_col!(A::GBMatrix, u::GBVector, col::I, rows::Union{Vector{I},GA
     nothing
 end
 
+function _assign!(A::GBMatrix, value, rows, cols; mask=NULL, accum=NULL, desc=NULL)
+    if accum !== NULL
+        accum = _get(accum)
+    end
+
+    if mask === NULL
+        mask = g_operators.mask
+    end
+    
+    GrB_assign(A, value, rows, cols, mask, accum, desc)
+end
+
 function _assign_matrix!(A::GBMatrix, B::GBMatrix, rows::Union{Vector{I},GAllTypes}, cols::Union{Vector{I},GAllTypes}; mask = NULL, accum = NULL, desc = NULL) where I <: Union{UInt64,Int64}
     if accum !== NULL
         accum = _get(accum)
+    end
+
+    if mask === NULL
+        mask = g_operators.mask
     end
 
     check(
