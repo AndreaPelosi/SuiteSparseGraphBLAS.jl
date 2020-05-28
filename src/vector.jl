@@ -108,10 +108,7 @@ function show(io::IO, v::GBVector)
         count = 1
         size = length(tuples)
         for (i, x) in tuples
-            print(io, "  [$(lpad(i, pad))] = $x")
-            if count != size 
-                println(io)
-            end
+            print(io, "\n  [$(lpad(i, pad))] = $x")
             count += 1
         end
     end
@@ -126,9 +123,12 @@ function show(io::IO, v::GBVector)
 end
 
 function show(io::IO, ::MIME"text/plain", v::GBVector{T}) where T
+    elem = nnz(v)
     print(io, "$(Int64(size(v)))-element GBVector{$(T)} ")
-    println(io, "with $(nnz(v)) stored entries:")
-    show(io, v)
+    print(io, "with $(elem) stored entries:")
+    if elem != 0
+        show(io, v)
+    end
 end
 
 """
