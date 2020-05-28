@@ -46,7 +46,7 @@ function _get(semiring::Semiring, types...)
     else
         return semiring.impl[index]
     end
-    error("error")
+    error("cannot use semiring with xtype=$xtype, ytype=$ytype, ztype=$ztype")
 end
 
 function load_builtin_semiring()
