@@ -194,6 +194,60 @@ function GrB_Matrix_setElement(C::GBMatrix{Float64}, X::Float64, I::Integer, J::
         )
 end
 
+function GrB_assign(A::GBMatrix{T}, v, rows, cols, mask, accum, desc) where T
+    v = convert(T, v)
+    
+    check(
+        ccall(
+            dlsym(graphblas_lib, "GrB_Matrix_assign_" * A.type.name),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cintmax_t, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(A), _gb_pointer(mask), _gb_pointer(accum), v,
+            pointer(rows), length(rows), pointer(cols), length(cols), _gb_pointer(desc)
+            )
+        )
+end
+
+function GrB_assign(A::GBMatrix{UInt64}, v::UInt64, rows, cols, mask, accum, desc)
+    fn_name = "GrB_Matrix_assign_UINT64"
+    check(
+        ccall(
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(A), _gb_pointer(mask), _gb_pointer(accum), v,
+            pointer(rows), length(rows), pointer(cols), length(cols), _gb_pointer(desc)
+            )
+        )
+end
+
+function GrB_assign(A::GBMatrix{Float32}, v::Float32, rows, cols, mask, accum, desc)
+    fn_name = "GrB_Matrix_assign_FP32"
+    check(
+        ccall(
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cfloat, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(A), _gb_pointer(mask), _gb_pointer(accum), v,
+            pointer(rows), length(rows), pointer(cols), length(cols), _gb_pointer(desc)
+            )
+        )
+end
+
+function GrB_assign(A::GBMatrix{Float64}, v::Float64, rows, cols, mask, accum, desc)
+    fn_name = "GrB_Matrix_assign_FP64"
+    check(
+        ccall(
+            dlsym(graphblas_lib, fn_name),
+            Cint,
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cdouble, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}, Cuintmax_t, Ptr{Cvoid}),
+            _gb_pointer(A), _gb_pointer(mask), _gb_pointer(accum), v,
+            pointer(rows), length(rows), pointer(cols), length(cols), _gb_pointer(desc)
+            )
+        )
+end
+
+
 """
     GrB_Matrix_extractElement(A, row_index, col_index)
 
