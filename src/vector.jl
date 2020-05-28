@@ -117,7 +117,7 @@ function show(io::IO, v::GBVector)
     end
 
     function padding(iter)
-        local last = first(Iterators.drop(iter, length(iter)-1))
+        local last = first(Iterators.drop(iter, length(iter) - 1))
         return length(string(last[1]))
     end
 
@@ -298,7 +298,7 @@ function getindex(v::GBVector, i::Integer)
         return GrB_Vector_extractElement(v, i - 1)
     catch e
         if e isa GraphBLASNoValueException
-            return v.type.zero
+            return zero(v.type.jtype)
         else
             rethrow(e)
         end
@@ -350,6 +350,10 @@ function emult(u::GBVector{T}, v::GBVector{U}; kwargs...) where {T,U}
         operator = g_operators.binaryop
     end
     operator_impl = _get(operator, out.type, u.type, v.type)
+
+    if mask === NULL
+        mask = g_operators.mask
+    end
 
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
@@ -409,6 +413,10 @@ function eadd(u::GBVector{T}, v::GBVector{U}; kwargs...) where {T,U}
     end
     operator_impl = _get(operator, out.type, u.type, v.type)
 
+    if mask === NULL
+        mask = g_operators.mask
+    end
+
     suffix = split(string(typeof(operator_impl)), "_")[end]
 
     check(
@@ -464,6 +472,10 @@ function vxm(u::GBVector{T}, A::GBMatrix{U}; kwargs...) where {T,U}
         semiring = g_operators.semiring
     end
     semiring_impl = _get(semiring, out.type, u.type, A.type)
+
+    if mask === NULL
+        mask = g_operators.mask
+    end
     
     check(
         ccall(
@@ -513,6 +525,10 @@ function apply(u::GBVector{T}; kwargs...) where T
         unaryop = g_operators.unaryop
     end
     unaryop_impl = _get(unaryop, out.type, u.type)
+
+    if mask === NULL
+        mask = g_operators.mask
+    end
 
     check(
         ccall(
@@ -609,6 +625,10 @@ function _extract(u::GBVector{T}, indices::Vector{I}; kwargs...) where {T,I <: U
         out = from_type(T, ni)
     end
 
+    if mask === NULL
+        mask = g_operators.mask
+    end
+
     check(
         ccall(
             dlsym(graphblas_lib, "GrB_Vector_extract"),
@@ -624,6 +644,10 @@ end
 
 function _assign!(u::GBVector, v::GBVector, indices::Union{Vector{I},GAllTypes}; kwargs...) where I <: Union{UInt64,Int64}
     _, _, mask, accum, desc = __get_args(kwargs)
+
+    if mask === NULL
+        mask = g_operators.mask
+    end
     
     check(
         ccall(
