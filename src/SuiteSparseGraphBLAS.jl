@@ -11,9 +11,9 @@ include("unaryop.jl")
 include("binaryop.jl")
 include("monoid.jl")
 include("semiring.jl")
+include("selector.jl")
 include("vector.jl")
 include("matrix.jl")
-# include("selector.jl")
 include("object_methods/lib_matrix.jl")
 include("object_methods/lib_vector.jl")
 include("context_methods.jl")
@@ -33,7 +33,7 @@ function __init__()
     load_builtin_binaryop()
     load_builtin_monoid()
     load_builtin_semiring()
-    # load_builtin_selectop()
+    load_builtin_selectop()
 
     global g_operators = (unaryop = Unaryop.ABS,
                           binaryop = Binaryop.PLUS,
@@ -45,7 +45,7 @@ function __init__()
     
 end
 
-export Unaryop, Binaryop, Monoids, Semirings#, Selectop
+export Unaryop, Binaryop, Monoids, Semirings, Selectop
 
 # Exceptions
 export GraphBLASNoValueException,
@@ -64,7 +64,8 @@ export GraphBLASNoValueException,
 
 # export matrix operations
 export from_type, from_lists, from_matrix, identity, square, findnz, nnz, clear!,
-    mxm, mxv, emult, eadd, apply, apply!, select, reduce_vector, reduce_scalar, transpose, kron
+    mxm, mxv, emult, eadd, apply, apply!, select, reduce_vector, reduce_scalar, transpose, kron,
+    LowerTriangular, UpperTriangular, Diagonal
 
 # export vector operations
 export from_vector, vxm, reduce
