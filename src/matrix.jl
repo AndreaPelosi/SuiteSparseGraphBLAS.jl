@@ -1,6 +1,8 @@
 import Base: getindex, size, copy, lastindex, setindex!, eltype, adjoint, Matrix, identity, kron, transpose,
              show, ==, *, |>
 
+import LinearAlgebra: LowerTriangular, UpperTriangular, Diagonal
+
 """
     from_type(type, m, n)
 
@@ -437,6 +439,20 @@ getindex(m::GBMatrix, i::Colon, j::Union{UnitRange,Vector}) =
 _zero_based_indexes(i::Vector) = map!(x->x - 1, i, i)
 _zero_based_indexes(i::UnitRange) = collect(i .- 1)
 
+
+function LowerTriangular(A::GBMatrix)
+    return select(A, TRIL)
+end
+
+function UpperTriangular(A::GBMatrix)
+    return select(A, TRIU)
+end
+
+function Diagonal(A::GBMatrix)
+    return select(A, DIAG)
+end
+
+
 """
     mxm(A::GBMatrix, B::GBMatrix; kwargs...)
 
@@ -859,7 +875,7 @@ function select(A::GBMatrix{T}, op::SelectOperator; kwargs...) where T
         out = from_type(T, size(A)...)
     end
 
-    if accum === NULL
+    if accum !== NULL
         accum = _get(accum)
     end
 
