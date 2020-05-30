@@ -449,7 +449,7 @@ function UpperTriangular(A::GBMatrix)
 end
 
 function Diagonal(A::GBMatrix)
-    return select(A, DIAG)
+    return reduce_vector(select(A, DIAG))
 end
 
 
